@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --primary-dark: #1A0B2E;
+  --primary-light: #2A1B3D;
+  --card-gradient-start: #3A2B4D;
+  --card-gradient-end: #5A3B6D;
+  --accent-blue: #00D4FF;
+  --text-white: #FFFFFF;
+  --text-gray: #D3D3D3;
+  --button-gradient-start: #FF6A88;
+  --button-gradient-end: #FF8E53;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, var(--primary-dark), var(--primary-light));
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-white);
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card {
+  background: linear-gradient(135deg, var(--card-gradient-start), var(--card-gradient-end));
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 24px;
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card.featured {
+  border: 2px solid var(--accent-blue);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+}
+
+.card-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-white);
+  margin-bottom: 8px;
+}
+
+.card-description {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-gray);
+  margin-bottom: 16px;
+}
+
+.button {
+  background: linear-gradient(135deg, var(--button-gradient-start), var(--button-gradient-end));
+  color: var(--text-white);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+}
+
+.tech-icons {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.tech-icon {
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.tech-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation delays for cards */
+.card:nth-child(1) { animation-delay: 0.2s; }
+.card:nth-child(2) { animation-delay: 0.4s; }
+.card:nth-child(3) { animation-delay: 0.6s; }
+.card:nth-child(4) { animation-delay: 0.8s; } 
