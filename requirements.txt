@@ -1,0 +1,7 @@
+litestar>=2.0.0
+mysql-connector-python
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
+rich
+jsbeautifier
