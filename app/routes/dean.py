@@ -3,9 +3,9 @@ from litestar.di import Provide
 from datetime import datetime, timedelta
 from typing import List, Optional
 from sqlalchemy import func
-from ..database import get_db
-from ..models import User, Attendance, Schedule, Subject
-from ..schemas import AttendanceResponse
+from ..database.database import get_db
+from ..models.models import User, Attendance, Schedule, Subject
+from ..schemas.schemas import AttendanceResponse
 import pdfkit
 from jinja2 import Template
 import os

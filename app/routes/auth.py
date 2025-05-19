@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 import mysql.connector
-from ..database import get_db
+from ..database.database import get_db
 
 # Определение SECRET_KEY и ALGORITHM
 SECRET_KEY = "your-secret-key"  # Замените на безопасный ключ

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
 import mysql.connector
-from ..database import get_db
+from ..database.database import get_db
 from typing import List, Optional
 from backend.models import Attendance, Makeup, Schedule, Student, Group, QRCode
 from backend.schemas import (
