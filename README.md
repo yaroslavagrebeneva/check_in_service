@@ -1,13 +1,12 @@
-# React + Vite
+<div align="left">
+ 
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Abril+Fatface&size=30&pause=100&color=000000&vCenter=true&width=250&height=40&lines=CheckIn+Project)](https://git.io/typing-svg)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+</div>
 
-Currently, two official plugins are available:
+<div align="left">
+  <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzEwZGFnd3l0d3NvbXJwamRoOGJtZGRvNHk5NmpwZzdnbjYwMHc5cSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cIDPGayWxXszVEiyDn/giphy.gif" width="600"/>
+</div>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-# check_in_service
+# Документация
+https://docs.google.com/document/d/1NyGHzOXtkI6w9LLmjtE8oT9htwMYOZjamQSz8WHYi5k/edit?usp=sharing
