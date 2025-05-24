@@ -1,4 +1,4 @@
-# Пустой файл для обозначения пакета 
-from .app import app
+# Пустой файл для обозначения пакета
+from .app.database.database import init_db
 
-__all__ = ['app'] 
+__all__ = ['init_db']
