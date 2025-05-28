@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Paper, Typography, Stack, Chip, Button, MenuItem, Select, FormControl, InputLabel, LinearProgress, Dialog, DialogContent, DialogActions } from '@mui/material';
+import { Box, Paper, Typography, Stack, Chip, Button, MenuItem, Select, FormControl, InputLabel, LinearProgress, Dialog, DialogContent, DialogActions, Table, TableContainer, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { deanStats, deanCriticalStudents, deanAttendanceReports } from '../../mocks/deanReportMocks';
+import { mockAbsences } from '../../mocks/deanStudentDetailsMock';
 import DeanStudentDetailsModal from '../../modals/DeanStudentDetailsModal';
-import { deanStudentDetailsMock } from '../../mocks/deanStudentDetailsMock';
+import CertificatesModal from './CertificatesModal';
 import '../dean/fonts/TimesNewRoman-normal.js';
 
 function generateDeanPDF(group, month, report, starosta, curator) {
@@ -16,10 +17,9 @@ function generateDeanPDF(group, month, report, starosta, curator) {
     '05': 'Май', '06': 'Июнь', '07': 'Июль', '08': 'Август',
     '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
   };
-  const [year, monthNum] = month.split('-');
-  const monthName = monthNames[monthNum];
+  const [year, monthjohnNum] = month.split('-');
+const monthName = monthNames[monthjohnNum];
 
-  // Заголовок по центру
   doc.text('Отчет по посещаемости', 105, 15, { align: 'center' });
 
   doc.setFontSize(12);
@@ -35,7 +35,6 @@ function generateDeanPDF(group, month, report, starosta, curator) {
   doc.text(`Общее количество проведённых занятий в месяц: ${report.total || ''}`, leftX, y);
   doc.line(leftX, y + 1, rightX, y + 1);
 
-  // Таблица
   const tableHead = [[
     'ФИО обучающегося',
     'Общее количество пропущенных занятий',
@@ -68,7 +67,6 @@ function generateDeanPDF(group, month, report, starosta, curator) {
     margin: { left: 10, right: 10 }
   });
 
-  // Подписи и линии
   let finalY = doc.lastAutoTable.finalY || y + 20 * 7;
   const tableWidth = 190;
   const leftMargin = 10;
@@ -77,12 +75,10 @@ function generateDeanPDF(group, month, report, starosta, curator) {
   const lineY2 = finalY + 25;
 
   doc.setFontSize(12);
-  // ФИО старосты и подпись
   doc.text(`ФИО старосты: ${starosta || 'Не указан'}`, leftMargin, lineY1);
   doc.text('подпись', rightMargin - 30, lineY1, { align: 'right' });
   doc.line(leftMargin, lineY1 + 2, rightMargin, lineY1 + 2);
 
-  // ФИО куратора и подпись
   doc.text(`ФИО куратора: ${curator || 'Не указан'}`, leftMargin, lineY2);
   doc.text('подпись', rightMargin - 30, lineY2, { align: 'right' });
   doc.line(leftMargin, lineY2 + 2, rightMargin, lineY2 + 2);
@@ -99,12 +95,30 @@ export default function DeanPanel() {
   const pdfBlobUrlRef = useRef(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStatsGroup, setSelectedStatsGroup] = useState(Object.keys(deanAttendanceReports)[0]);
+  const [selectedCertificatesGroup, setSelectedCertificatesGroup] = useState(null);
+  const [selectedCertificateStudent, setSelectedCertificateStudent] = useState(null);
+  const [viewMode, setViewMode] = useState('critical'); // 'critical' или 'certificates'
   const statsGroups = Object.keys(deanAttendanceReports);
+  const groups = [...new Set(deanCriticalStudents.map(student => student.group))];
   const groupReport = deanAttendanceReports[group]?.[month] || {};
   const total = groupReport.total || 0;
   const present = groupReport.present || 0;
   const absent = groupReport.absent || 0;
   const percent = total ? Math.round((present / total) * 100) : 0;
+
+  const getStudentCertificates = (studentName, studentGroup) => {
+    return mockAbsences
+      .filter(absence => absence.reason !== 'Не указана')
+      .map(absence => ({
+        reasonType: absence.reason,
+        desc: absence.desc || '',
+        date: absence.date,
+        subject: absence.subject,
+        group: studentGroup,
+        file: absence.file || '',
+        fileUrl: absence.file ? `/path/to/files/${absence.file}` : ''
+      }));
+  };
 
   const handleDownloadPDF = () => {
     const report = deanAttendanceReports[group]?.[month];
@@ -118,7 +132,7 @@ export default function DeanPanel() {
         '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
       };
       const [year, monthNum] = month.split('-');
-      const monthName = monthNames[monthNum];
+const monthName = monthNames[monthjohnNum];
       doc.save(`Отчет_по_посещаемости_${group}_${monthName}_${year}.pdf`);
       setPdfLoading(false);
     }, 500);
@@ -208,32 +222,136 @@ export default function DeanPanel() {
                   variant="determinate" 
                   value={deanAttendanceReports[selectedStatsGroup]?.[month]?.total ? 
                     Math.round((deanAttendanceReports[selectedStatsGroup][month].present / deanAttendanceReports[selectedStatsGroup][month].total) * 100) : 0} 
-                  sx={{ height: 12, borderRadius: 6, bgcolor: '#eee', flex: 1, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} 
+                  sx={{ borderRadius: 6, bgcolor: '#eee', flex: 1, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} 
                 />
               </Box>
             </Box>
           </Box>
         </Paper>
-        {/* Карточка критических студентов */}
+        {/* Карточка с переключением между критической посещаемостью и справками */}
         <Paper elevation={2} sx={{ borderRadius: 12, p: 4, flex: 2, minWidth: 400 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>Студенты с критической посещаемостью</Typography>
-          <Stack spacing={2}>
-            {deanCriticalStudents.map((s) => (
-              <Paper key={s.name + s.group} sx={{ p: 2, borderRadius: 2.5, display: 'flex', alignItems: 'center', bgcolor: '#fafbfc', border: '1px solid #eaeaea' }}>
-                <Box flex={1}>
-                  <Typography fontWeight={600} fontSize={16}>{s.name}</Typography>
-                  <Typography fontSize={15} color="#888">{s.group}</Typography>
-                </Box>
-                <Chip label={`${s.percentMissed}% пропусков`} sx={{ fontWeight: 700, fontSize: 16, borderRadius: 2, bgcolor: 'rgba(211,47,47,0.10)', color: '#d32f2f', border: '1.5px solid #d32f2f', minWidth: 60, ml: 2 }} />
-                <Chip
-                  label="Подробнее"
-                  clickable
-                  sx={{ ml: 2, borderRadius: 999, bgcolor: '#fff', color: '#111', fontWeight: 600, fontSize: 15, px: 2, minHeight: 36, border: '1.5px solid #111', '&:hover': { bgcolor: '#f5f5f5' } }}
-                  onClick={() => setSelectedStudent({ ...deanStudentDetailsMock, ...s })}
-                />
-              </Paper>
-            ))}
+          <Stack direction="row" spacing={1} mb={2}>
+            <Chip
+              label="Студенты с критической посещаемостью"
+              onClick={() => {
+                setViewMode('critical');
+                setSelectedCertificatesGroup(null);
+              }}
+              sx={{
+                bgcolor: viewMode === 'critical' ? '#111' : '#f5f5f5',
+                color: viewMode === 'critical' ? '#fff' : '#111',
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 2,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: viewMode === 'critical' ? '#111' : '#eee' }
+              }}
+            />
+            <Chip
+              label="Справки"
+              onClick={() => setViewMode('certificates')}
+              sx={{
+                bgcolor: viewMode === 'certificates' ? '#111' : '#f5f5f5',
+                color: viewMode === 'certificates' ? '#fff' : '#111',
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 2,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: viewMode === 'certificates' ? '#111' : '#eee' }
+              }}
+            />
           </Stack>
+          {viewMode === 'critical' && (
+            <Stack spacing={2}>
+              {deanCriticalStudents.map((s) => (
+                <Paper key={s.name + s.group} sx={{ p: 2, borderRadius: 2.5, display: 'flex', alignItems: 'center', bgcolor: '#fafbfc', border: '1px solid #eaeaea' }}>
+                  <Box flex={1}>
+                    <Typography fontWeight={600} fontSize={16}>{s.name}</Typography>
+                    <Typography fontSize={15} color="#888">{s.group}</Typography>
+                  </Box>
+                  <Chip label={`${s.percentMissed}% пропусков`} sx={{ fontWeight: 700, fontSize: 16, borderRadius: 2, bgcolor: 'rgba(211,47,47,0.10)', color: '#d32f2f', border: '1.5px solid #d32f2f', minWidth: 60, ml: 2 }} />
+                  <Chip
+                    label="Подробнее"
+                    clickable
+                    sx={{ ml: 2, borderRadius: 999, bgcolor: '#fff', color: '#111', fontWeight: 600, fontSize: 15, px: 2, minHeight: 36, border: '1.5px solid #111', '&:hover': { bgcolor: '#f5f5f5' } }}
+                    onClick={() => setSelectedStudent({ ...s })}
+                  />
+                </Paper>
+              ))}
+            </Stack>
+          )}
+          {viewMode === 'certificates' && (
+            <>
+              <Stack direction="row" spacing={1} mb={2}>
+                {groups.map(group => (
+                  <Chip
+                    key={group}
+                    label={group}
+                    onClick={() => setSelectedCertificatesGroup(group)}
+                    sx={{
+                      bgcolor: selectedCertificatesGroup === group ? '#111' : '#f5f5f5',
+                      color: selectedCertificatesGroup === group ? '#fff' : '#111',
+                      fontWeight: 500,
+                      fontSize: 15,
+                      borderRadius: 2,
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: selectedCertificatesGroup === group ? '#111' : '#eee' }
+                    }}
+                  />
+                ))}
+              </Stack>
+              {selectedCertificatesGroup && (
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>ФИО студента</TableCell>
+                        <TableCell>Дата</TableCell>
+                        <TableCell>Предмет</TableCell>
+                        <TableCell>Причина</TableCell>
+                        <TableCell>Справка</TableCell>                  
+
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {deanCriticalStudents
+                        .filter(student => student.group === selectedCertificatesGroup)
+                        .map(student => (
+                          mockAbsences
+                            .filter(absence => absence.reason !== 'Не указана')
+                            .map((absence, index) => (
+                              <TableRow key={`${student.name}-${index}`}>
+                                <TableCell>{student.name}</TableCell>
+                                <TableCell>{absence.date}</TableCell>
+                                <TableCell>{absence.subject}</TableCell>
+                                <TableCell>{absence.reason} {absence.desc ? `(${absence.desc})` : ''}</TableCell>
+                                <TableCell>
+                                  {absence.file ? (
+                                    <Button
+                                      variant="text"
+                                      href={`/path/to/files/${absence.file}`}
+                                      target="_blank"
+                                      sx={{ textTransform: 'none', color: '#1976d2' }}
+                                    >
+                                      {absence.file}
+                                    </Button>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </TableCell>
+                            
+                              </TableRow>
+                            ))
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+              {!selectedCertificatesGroup && (
+                <Typography color="#888">Выберите группу для просмотра справок</Typography>
+              )}
+            </>
+          )}
         </Paper>
       </Stack>
       {/* PDF отчёт */}
@@ -312,6 +430,12 @@ export default function DeanPanel() {
       </Dialog>
       {/* Модалка подробностей студента */}
       <DeanStudentDetailsModal open={!!selectedStudent} student={selectedStudent} onClose={() => setSelectedStudent(null)} />
+      {/* Модалка справок */}
+      <CertificatesModal
+        open={!!selectedCertificateStudent}
+        onClose={() => setSelectedCertificateStudent(null)}
+        student={selectedCertificateStudent}
+      />
     </Box>
   );
 }

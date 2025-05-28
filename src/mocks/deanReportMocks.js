@@ -1,4 +1,3 @@
-// Моки для декан-панели
 export const deanAttendanceReports = {
   'И-21': {
     '2024-06': {
@@ -36,4 +35,4 @@ export const deanStats = {
   totalStudents: 58,
   totalAbsences: 13,
   bestGroup: 'ПМИ-23',
-}; 
+};

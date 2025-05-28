@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useNavigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import {
   AppBar, Toolbar, IconButton, Avatar, Drawer, Box, Typography, Accordion, AccordionSummary, AccordionDetails, List, ListItemButton, ListItemIcon, ListItemText, Divider
 } from '@mui/material';
@@ -18,6 +18,8 @@ import DeanPanel from '../features/dean/DeanPanel';
 const drawerWidth = 260;
 
 function SideNav({ onNavigate }) {
+  const location = useLocation(); // Get current route
+
   return (
     <Drawer
       variant="permanent"
@@ -27,9 +29,9 @@ function SideNav({ onNavigate }) {
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
-          background: '#fff', // White background
-          color: '#000', // Text color black
-          borderRight: '1px solid #757575', // Thin black vertical divider
+          background: '#fff',
+          color: '#000',
+          borderRight: '1px solid #757575',
         },
       }}
     >
@@ -42,20 +44,68 @@ function SideNav({ onNavigate }) {
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
             <List disablePadding>
-              <ListItemButton sx={{ pl: 6 }} onClick={() => onNavigate('/attendance/student')}>
-                <ListItemIcon sx={{ color: '#757575' }}><PersonIcon /></ListItemIcon>
+              <ListItemButton
+                sx={{
+                  pl: 6,
+                  bgcolor: location.pathname === '/attendance/student' ? '#1976d2' : 'transparent',
+                  color: location.pathname === '/attendance/student' ? '#fff' : '#757575',
+                  '&:hover': {
+                    bgcolor: location.pathname === '/attendance/student' ? '#1565c0' : '#f5f5f5',
+                  },
+                }}
+                onClick={() => onNavigate('/attendance/student')}
+              >
+                <ListItemIcon sx={{ color: location.pathname === '/attendance/student' ? '#fff' : '#757575' }}>
+                  <PersonIcon />
+                </ListItemIcon>
                 <ListItemText primary="Студент" />
               </ListItemButton>
-              <ListItemButton sx={{ pl: 6 }} onClick={() => onNavigate('/attendance/starosta')}>
-                <ListItemIcon sx={{ color: '#757575' }}><GroupIcon /></ListItemIcon>
+              <ListItemButton
+                sx={{
+                  pl: 6,
+                  bgcolor: location.pathname === '/attendance/starosta' ? '#1976d2' : 'transparent',
+                  color: location.pathname === '/attendance/starosta' ? '#fff' : '#757575',
+                  '&:hover': {
+                    bgcolor: location.pathname === '/attendance/starosta' ? '#1565c0' : '#f5f5f5',
+                  },
+                }}
+                onClick={() => onNavigate('/attendance/starosta')}
+              >
+                <ListItemIcon sx={{ color: location.pathname === '/attendance/starosta' ? '#fff' : '#757575' }}>
+                  <GroupIcon />
+                </ListItemIcon>
                 <ListItemText primary="Староста" />
               </ListItemButton>
-              <ListItemButton sx={{ pl: 6 }} onClick={() => onNavigate('/attendance/teacher')}>
-                <ListItemIcon sx={{ color: '#757575' }}><SchoolIcon /></ListItemIcon>
+              <ListItemButton
+                sx={{
+                  pl: 6,
+                  bgcolor: location.pathname === '/attendance/teacher' ? '#1976d2' : 'transparent',
+                  color: location.pathname === '/attendance/teacher' ? '#fff' : '#757575',
+                  '&:hover': {
+                    bgcolor: location.pathname === '/attendance/teacher' ? '#1565c0' : '#f5f5f5',
+                  },
+                }}
+                onClick={() => onNavigate('/attendance/teacher')}
+              >
+                <ListItemIcon sx={{ color: location.pathname === '/attendance/teacher' ? '#fff' : '#757575' }}>
+                  <SchoolIcon />
+                </ListItemIcon>
                 <ListItemText primary="Преподаватель" />
               </ListItemButton>
-              <ListItemButton sx={{ pl: 6 }} onClick={() => onNavigate('/attendance/dean')}>
-                <ListItemIcon sx={{ color: '#757575' }}><AdminPanelSettingsIcon /></ListItemIcon>
+              <ListItemButton
+                sx={{
+                  pl: 6,
+                  bgcolor: location.pathname === '/attendance/dean' ? '#1976d2' : 'transparent',
+                  color: location.pathname === '/attendance/dean' ? '#fff' : '#757575',
+                  '&:hover': {
+                    bgcolor: location.pathname === '/attendance/dean' ? '#1565c0' : '#f5f5f5',
+                  },
+                }}
+                onClick={() => onNavigate('/attendance/dean')}
+              >
+                <ListItemIcon sx={{ color: location.pathname === '/attendance/dean' ? '#fff' : '#757575' }}>
+                  <AdminPanelSettingsIcon />
+                </ListItemIcon>
                 <ListItemText primary="Декан" />
               </ListItemButton>
             </List>

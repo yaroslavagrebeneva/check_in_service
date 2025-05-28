@@ -4,7 +4,7 @@ import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import { useState } from 'react';
 import AbsenceReasonModal from '../../modals/AbsenceReasonModal';
-import VisitDetailsModal from '../../modals/VisitDetailsModal';
+import { StudentVisitModal } from '../../modals/StudentVisitModal';
 import QRCodeModal from '../../modals/QRCodeModal';
 import { mockHistory, mockAbsences } from '../../mocks/studentMocks';
 
@@ -153,7 +153,7 @@ export default function StudentPanel() {
         initialDesc={absences[openReasonIdx]?.desc || ''}
         initialFile={absences[openReasonIdx]?.file || null}
       />
-      <VisitDetailsModal
+      <StudentVisitModal
         open={openVisitIdx !== null}
         onClose={() => setOpenVisitIdx(null)}
         visit={mockHistory[openVisitIdx]}
@@ -161,4 +161,4 @@ export default function StudentPanel() {
       <QRCodeModal open={openQR} onClose={() => setOpenQR(false)} />
     </Box>
   );
-} 
+}

@@ -1,11 +1,45 @@
 export const mockHistory = [
-  { date: '2024-06-10', time: '10:15', subject: 'Базы данных', teacher: 'Иванова А.А.', status: 'Присутствовал' },
-  { date: '2024-06-09', time: '08:30', subject: 'Алгоритмизация и программирование', teacher: 'Петров П.П.', status: 'Отсутствовал' },
-  { date: '2024-06-08', time: '12:00', subject: 'Математический анализ', teacher: 'Сидоров В.В.', status: 'Присутствовал' },
+  {
+    time: '11:30–13:00',
+    date: '2024-06-10',
+    subject: 'Математическая логика',
+    teacher: 'Иванов А.А.',
+    status: 'П'
+  },
+  {
+    time: '10:15–11:45',
+    date: '2024-06-11',
+    subject: 'Базы данных',
+    teacher: 'Петров Б.Б.',
+    status: 'Н'
+  },
+  {
+    time: '09:00–10:30',
+    date: '2024-06-12',
+    subject: 'Физика',
+    teacher: 'Сидоров В.В.',
+    status: 'П'
+  }
 ];
- 
+
 export const mockAbsences = [
-  { date: '2024-06-09', time: '08:30', subject: 'Алгоритмизация и программирование', teacher: 'Петров П.П.', reason: 'Не указана', type: '', file: null, desc: '' },
-  { date: '2024-06-05', time: '10:15', subject: 'Базы данных', teacher: 'Иванова А.А.', reason: 'Болезнь', type: 'illness', file: null, desc: '' },
-  { date: '2024-06-03', time: '14:00', subject: 'Физика', teacher: 'Смирнов А.А.', reason: 'Уважительная', type: 'valid', file: null, desc: 'Семейные обстоятельства', accepted: true },
+  {
+    time: '10:15–11:45',
+    date: '2024-06-11',
+    subject: 'Базы данных',
+    teacher: 'Петров Б.Б.',
+    reason: 'Не указана',
+    accepted: false
+  },
+  {
+    time: '11:40–13:10',
+    date: '2024-06-14',
+    subject: 'История',
+    teacher: 'Кузнецов Г.Г.',
+    reason: 'Болезнь',
+    type: 'illness',
+    desc: 'ОРВИ',
+    file: 'spravka.pdf',
+    accepted: false
+  }
 ];

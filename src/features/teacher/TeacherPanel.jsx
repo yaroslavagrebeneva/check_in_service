@@ -1,15 +1,14 @@
 import { Box, Paper, Typography, Button, Stack, Chip, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip } from '@mui/material';
 import { useState, useEffect } from 'react';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { weekDays, groups, schedule } from '../../mocks/teacherScheduleMocks';
+import { weekDays, schedule } from '../../mocks/teacherScheduleMocks';
 import TeacherQRModal from '../../modals/TeacherQRModal';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 function useDynamicCode() {
   const [code, setCode] = useState('');
@@ -25,7 +24,6 @@ function useDynamicCode() {
 function AbsenceDetailsModal({ open, onClose, student, lesson, onAccept, onReject, status }) {
   if (!student) return null;
   const hasReason = !!student.reason;
-  // Статус ожидания только если есть причина и статус pending
   const isPending = hasReason && (status === 'pending' || student.status === 'pending');
   const isAccepted = hasReason && status === 'accepted';
   const isRejected = hasReason && status === 'rejected';
@@ -91,9 +89,63 @@ function AbsenceDetailsModal({ open, onClose, student, lesson, onAccept, onRejec
   );
 }
 
-// 1. Микро-компонент для чипа ФИО с буквой статуса
+function EditStatusModal({ open, onClose, student, lesson, onConfirmAbsent, onSetPresent }) {
+  if (!student || !lesson) return null;
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ fontWeight: 600 }}>Редактирование</DialogTitle>
+      <DialogContent>
+        <Stack spacing={1.5} mt={1}>
+          <Typography fontWeight={500} fontSize={16}>ФИО: {student.name}</Typography>
+          <Typography fontSize={15}>Группа: {lesson.group}</Typography>
+          <Typography fontSize={15}>Предмет: {lesson.subject}</Typography>
+          <Typography fontSize={15}>Время: {lesson.time}–{lesson.end}</Typography>
+          <Typography fontSize={15}>Статус: {student.status === 'П' ? 'Присутствует' : 'Отсутствует'}</Typography>
+        </Stack>
+        <Stack direction="row" spacing={2} justifyContent="center" mt={3}>
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon fontSize="large" />}
+            onClick={onConfirmAbsent}
+            sx={{
+              bgcolor: 'rgba(211,47,47,0.10)',
+              color: '#d32f2f',
+              border: '1.5px solid #d32f2f',
+              borderRadius: 2,
+              fontWeight: 500,
+              fontSize: 14,
+              px: 3,
+              py: 1,
+              '&:hover': { bgcolor: 'rgba(211,47,47,0.18)' }
+            }}
+          >
+            Отсутствует
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CheckCircleIcon fontSize="large" />}
+            onClick={onSetPresent}
+            sx={{
+              bgcolor: 'rgba(76,175,80,0.10)',
+              color: '#388e3c',
+              border: '1.5px solid #388e3c',
+              borderRadius: 2,
+              fontWeight: 500,
+              fontSize: 14,
+              px: 3,
+              py: 1,
+              '&:hover': { bgcolor: 'rgba(76,175,80,0.18)' }
+            }}
+          >
+            Присутствует
+          </Button>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function NameStatusChip({ name, status }) {
-  // Показываем только 'П' или 'Н', даже если есть другие статусы
   const letter = status === 'П' ? 'П' : 'Н';
   return (
     <Chip
@@ -141,6 +193,7 @@ function VisitDetailsModal({ open, onClose, lesson }) {
   const [filter, setFilter] = useState('all');
   const [students, setStudents] = useState(lesson?.students || []);
   const [absenceModal, setAbsenceModal] = useState({ open: false, student: null, idx: null });
+  const [editModal, setEditModal] = useState({ open: false, student: null, idx: null });
   const [reasonStatus, setReasonStatus] = useState({});
 
   useEffect(() => {
@@ -149,11 +202,32 @@ function VisitDetailsModal({ open, onClose, lesson }) {
     setReasonStatus({});
   }, [lesson, open]);
 
-  const filtered = filter === 'all' ? students : students.filter(s => s.status === 'Н');
+  const filtered = filter === 'all'
+    ? students.slice().sort((a, b) => a.name.localeCompare(b.name))
+    : filter === 'absent'
+      ? students.filter(s => s.status === 'Н').slice().sort((a, b) => a.name.localeCompare(b.name))
+      : students.slice().sort((a, b) => a.name.localeCompare(b.name));
 
   const handleAccept = idx => setReasonStatus(s => ({ ...s, [idx]: 'accepted' }));
   const handleReject = idx => setReasonStatus(s => ({ ...s, [idx]: 'rejected' }));
   const handleRequest = idx => setReasonStatus(s => ({ ...s, [idx]: 'pending' }));
+
+  const handleRemoveStudent = idx => {
+    setStudents(prev =>
+      prev.map((student, i) =>
+        i === idx ? { ...student, status: 'Н', markType: 'manual' } : student
+      )
+    );
+  };
+
+  const handleEditStatus = (idx, newStatus) => {
+    setStudents(prev =>
+      prev.map((student, i) =>
+        i === idx ? { ...student, status: newStatus, markType: 'manual' } : student
+      )
+    );
+    setEditModal({ open: false, student: null, idx: null });
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -164,13 +238,40 @@ function VisitDetailsModal({ open, onClose, lesson }) {
             label="Все"
             clickable
             onClick={() => setFilter('all')}
-            sx={{ bgcolor: filter === 'all' ? 'rgba(17,17,17,0.9)' : 'rgba(245,245,245,0.9)', color: filter === 'all' ? '#fff' : '#111', fontWeight: 500, borderRadius: 2, fontSize: 14, minHeight: 28 }}
+            sx={{
+              bgcolor: filter === 'all' ? 'rgba(17,17,17,0.9)' : 'rgba(245,245,245,0.9)',
+              color: filter === 'all' ? '#fff' : '#111',
+              fontWeight: 500,
+              borderRadius: 2,
+              fontSize: 14,
+              minHeight: 28
+            }}
           />
           <Chip
             label="Только отсутствующие"
             clickable
             onClick={() => setFilter('absent')}
-            sx={{ bgcolor: filter === 'absent' ? 'rgba(17,17,17,0.9)' : 'rgba(245,245,245,0.9)', color: filter === 'absent' ? '#fff' : '#111', fontWeight: 500, borderRadius: 2, fontSize: 14, minHeight: 28 }}
+            sx={{
+              bgcolor: filter === 'absent' ? 'rgba(17,17,17,0.9)' : 'rgba(245,245,245,0.9)',
+              color: filter === 'absent' ? '#fff' : '#111',
+              fontWeight: 500,
+              borderRadius: 2,
+              fontSize: 14,
+              minHeight: 28
+            }}
+          />
+          <Chip
+            label="Способ отметки"
+            clickable
+            onClick={() => setFilter('markType')}
+            sx={{
+              bgcolor: filter === 'markType' ? 'rgba(17,17,17,0.9)' : 'rgba(245,245,245,0.9)',
+              color: filter === 'markType' ? '#fff' : '#111',
+              fontWeight: 500,
+              borderRadius: 2,
+              fontSize: 14,
+              minHeight: 28
+            }}
           />
         </Stack>
         <Stack spacing={1.5}>
@@ -179,26 +280,152 @@ function VisitDetailsModal({ open, onClose, lesson }) {
             const isPending = hasReason && (reasonStatus[idx] === 'pending' || s.status === 'pending');
             const isAccepted = hasReason && reasonStatus[idx] === 'accepted';
             const isRejected = hasReason && reasonStatus[idx] === 'rejected';
+
             return (
-              <Paper key={s.name} sx={{ p: 1.5, borderRadius: 2.5, display: 'flex', alignItems: 'center', bgcolor: '#fafbfc', border: '1px solid #eaeaea' }}>
-                <NameStatusChip name={s.name} status={s.status} />
-                <Box flex={1} />
-                {s.status === 'П' ? null : (
+              <Paper
+                key={s.name}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  bgcolor: '#fafbfc',
+                  border: '1px solid #eaeaea'
+                }}
+              >
+                {filter === 'markType' ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                    <Typography fontWeight={500} fontSize={14}>{s.name}</Typography>
+                    <Typography fontSize={13} color="#757575">Группа: {lesson?.group}</Typography>
+                    <Typography fontSize={13} color="#757575">Предмет: {lesson?.subject}</Typography>
+                    <Typography fontSize={13} color="#757575">Время: {lesson?.time}–{lesson?.end}</Typography>
+                    <Stack direction="row" spacing={1} mt={1}>
+                      <Chip
+                        label={s.status === 'П' ? 'Присутствует' : 'Отсутствует'}
+                        sx={{
+                          fontWeight: 500,
+                          bgcolor: s.status === 'П' ? 'rgba(76,175,80,0.10)' : 'rgba(211,47,47,0.10)',
+                          color: s.status === 'П' ? '#388e3c' : '#d32f2f',
+                          border: s.status === 'П' ? '1.5px solid #388e3c' : '1.5px solid #d32f2f',
+                          borderRadius: 2,
+                          fontSize: 13,
+                          minHeight: 28
+                        }}
+                      />
+                      <Chip
+                        label={s.markType === 'qr' ? 'QR-код' : 'Вручную'}
+                        sx={{
+                          fontWeight: 500,
+                          bgcolor: s.markType === 'qr' ? 'rgba(76,175,80,0.10)' : 'rgba(189,189,189,0.10)',
+                          color: s.markType === 'qr' ? '#388e3c' : '#757575',
+                          border: s.markType === 'qr' ? '1.5px solid #388e3c' : '1.5px solid #bdbdbd',
+                          borderRadius: 2,
+                          fontSize: 13,
+                          minHeight: 28
+                        }}
+                      />
+                    </Stack>
+                  </Box>
+                ) : (
                   <>
-                    <IconButton size="small" sx={{ color: '#757575', ml: 0.5 }} onClick={() => setAbsenceModal({ open: true, student: s, idx })}>
-                      <InfoOutlinedIcon />
-                    </IconButton>
-                    {/* Статус причины */}
-                    {isPending && !isAccepted && !isRejected && (
-                      <Chip label="Ожидание" sx={{ ml: 1, fontWeight: 500, bgcolor: 'rgba(189,189,189,0.10)', color: '#757575', border: '1.5px solid #bdbdbd', borderRadius: 2, fontSize: 13, minHeight: 28 }} />
+                    <NameStatusChip name={s.name} status={s.status} />
+                    <Typography fontSize={13} color="#757575" ml={2}>
+                      {s.markType === 'qr' ? 'QR-код' : 'Вручную'}
+                    </Typography>
+                    <Box flex={1} />
+                    {s.status === 'П' && s.markType === 'manual' && (
+                      <Tooltip title="Удалить и отметить как отсутствующего">
+                        <IconButton
+                          size="small"
+                          sx={{ color: '#d32f2f', ml: 0.5 }}
+                          onClick={() => handleRemoveStudent(idx)}
+                        >
+                          <CancelIcon />
+                        </IconButton>
+                      </Tooltip>
                     )}
-                    {isAccepted && <Chip label="Причина принята" sx={{ ml: 1, fontWeight: 500, bgcolor: 'rgba(76,175,80,0.10)', color: '#388e3c', border: '1.5px solid #388e3c', borderRadius: 2, fontSize: 13, minHeight: 28 }} />}
-                    {isRejected && <Chip label="Отклонено" sx={{ ml: 1, fontWeight: 500, bgcolor: 'rgba(211,47,47,0.10)', color: '#d32f2f', border: '1.5px solid #d32f2f', borderRadius: 2, fontSize: 13, minHeight: 28 }} />}
+                    {s.status === 'Н' && filter !== 'markType' && (
+                      <>
+                        <Tooltip title="Редактировать статус">
+                          <IconButton
+                            size="small"
+                            sx={{ color: '#1976d2', ml: 0.5 }}
+                            onClick={() => setEditModal({ open: true, student: s, idx })}
+                            disabled={s.markType !== 'manual'}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          sx={{ color: '#757575', ml: 0.5 }}
+                          onClick={() => setAbsenceModal({ open: true, student: s, idx })}
+                        >
+                          <InfoOutlinedIcon />
+                        </IconButton>
+                        {isPending && !isAccepted && !isRejected && (
+                          <Chip
+                            label="Ожидание"
+                            sx={{
+                              ml: 1,
+                              fontWeight: 500,
+                              bgcolor: 'rgba(189,189,189,0.10)',
+                              color: '#757575',
+                              border: '1.5px solid #bdbdbd',
+                              borderRadius: 2,
+                              fontSize: 13,
+                              minHeight: 28
+                            }}
+                          />
+                        )}
+                        {isAccepted && (
+                          <Chip
+                            label="Причина принята"
+                            sx={{
+                              ml: 1,
+                              fontWeight: 500,
+                              bgcolor: 'rgba(76,175,80,0.10)',
+                              color: '#388e3c',
+                              border: '1.5px solid #388e3c',
+                              borderRadius: 2,
+                              fontSize: 13,
+                              minHeight: 28
+                            }}
+                          />
+                        )}
+                        {isRejected && (
+                          <Chip
+                            label="Отклонено"
+                            sx={{
+                              ml: 1,
+                              fontWeight: 500,
+                              bgcolor: 'rgba(211,47,47,0.10)',
+                              color: '#d32f2f',
+                              border: '1.5px solid #d32f2f',
+                              borderRadius: 2,
+                              fontSize: 13,
+                              minHeight: 28
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                    {!hasReason && reasonStatus[idx] === 'pending' && filter !== 'markType' && (
+                      <Chip
+                        label="Ожидание"
+                        sx={{
+                          ml: 1,
+                          fontWeight: 500,
+                          bgcolor: 'rgba(189,189,189,0.10)',
+                          color: '#757575',
+                          border: '1.5px solid #bdbdbd',
+                          borderRadius: 2,
+                          fontSize: 13,
+                          minHeight: 28
+                        }}
+                      />
+                    )}
                   </>
-                )}
-                {/* Если причины нет, показываем только кнопку "Запросить причину" в модалке */}
-                {!hasReason && reasonStatus[idx] === 'pending' && (
-                  <Chip label="Ожидание" sx={{ ml: 1, fontWeight: 500, bgcolor: 'rgba(189,189,189,0.10)', color: '#757575', border: '1.5px solid #bdbdbd', borderRadius: 2, fontSize: 13, minHeight: 28 }} />
                 )}
               </Paper>
             );
@@ -224,136 +451,23 @@ function VisitDetailsModal({ open, onClose, lesson }) {
             handleRequest(absenceModal.idx);
           }
         }}
-        onReject={() => { setAbsenceModal({ open: false, student: null, idx: null }); handleReject(absenceModal.idx); }}
+        onReject={() => {
+          setAbsenceModal({ open: false, student: null, idx: null });
+          handleReject(absenceModal.idx);
+        }}
+      />
+      <EditStatusModal
+        open={editModal.open}
+        onClose={() => setEditModal({ open: false, student: null, idx: null })}
+        student={editModal.student}
+        lesson={lesson}
+        onConfirmAbsent={() => handleEditStatus(editModal.idx, 'Н')}
+        onSetPresent={() => handleEditStatus(editModal.idx, 'П')}
       />
     </Dialog>
   );
 }
 
-function OtrabotkaCard({ lessons, groups }) {
-  const [group, setGroup] = useState(groups[0] || '');
-  const [otrabModal, setOtrabModal] = useState({ open: false, idx: null });
-  // Собираем студентов с Н по выбранной группе
-  const absentStudents = [];
-  lessons.forEach(lesson => {
-    if (lesson.group === group) {
-      lesson.students.forEach((s, idx) => {
-        if (s.status === 'Н') {
-          absentStudents.push({ ...s, lesson, idx });
-        }
-      });
-    }
-  });
-  const [students, setStudents] = useState(absentStudents);
-  useEffect(() => {
-    setStudents(absentStudents);
-  }, [group, lessons]);
-
-  const handleOtrab = (idx, result) => {
-    setStudents(students => students.map((s, i) => i === idx ? { ...s, otrab: result } : s));
-    setOtrabModal({ open: false, idx: null });
-  };
-
-  return (
-    <Paper elevation={2} sx={{ borderRadius: 12, p: 4, flex: 1, width: '100%', mb: 2, mt: 2 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h6" fontWeight={600} fontSize={18}>Отработка</Typography>
-        <Stack direction="row" spacing={1}>
-          {groups.map(g => (
-            <Chip
-              key={g}
-              label={g}
-              clickable
-              onClick={() => setGroup(g)}
-              sx={{
-                bgcolor: group === g ? '#111' : '#f5f5f5',
-                color: group === g ? '#fff' : '#111',
-                fontWeight: 500,
-                borderRadius: 2,
-                fontSize: 14,
-                minHeight: 28
-              }}
-            />
-          ))}
-        </Stack>
-      </Stack>
-      <Stack spacing={1.5}>
-        {students.length === 0 && <Typography color="#757575" fontSize={15}>Нет студентов с отсутствиями</Typography>}
-        {students.map((s, idx) => (
-          <Paper key={s.name + s.lesson.time} sx={{ p: 1.2, borderRadius: 2.5, display: 'flex', alignItems: 'center', bgcolor: '#fafbfc', border: '1px solid #eaeaea' }}>
-            <NameStatusChip name={s.name} status={s.status} />
-            <Typography fontSize={13} color="#757575" ml={2} mr={2}>{s.lesson.subject} ({s.lesson.time}–{s.lesson.end})</Typography>
-            <Chip
-              label={s.otrab === '+0.75' ? 'Отработка: +0.75' : s.otrab === '-1' ? 'Не отработал: -1' : 'Отработка'}
-              onClick={() => setOtrabModal({ open: true, idx })}
-              sx={{
-                bgcolor: s.otrab ? (s.otrab === '+0.75' ? 'rgba(76,175,80,0.10)' : 'rgba(211,47,47,0.10)') : 'rgba(245,245,245,0.9)',
-                color: s.otrab ? (s.otrab === '+0.75' ? '#388e3c' : '#d32f2f') : '#111',
-                border: s.otrab ? (s.otrab === '+0.75' ? '1.5px solid #388e3c' : '1.5px solid #d32f2f') : '1.5px solid #bdbdbd',
-                fontWeight: 500,
-                borderRadius: 2,
-                fontSize: 13,
-                minHeight: 28,
-                ml: 1,
-                cursor: 'pointer',
-                px: 2
-              }}
-            />
-          </Paper>
-        ))}
-      </Stack>
-      <Dialog open={otrabModal.open} onClose={() => setOtrabModal({ open: false, idx: null })} maxWidth="xs" fullWidth>
-        <DialogTitle>Отработка</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <Button
-              variant="outlined"
-              sx={{
-                bgcolor: 'rgba(76,175,80,0.10)',
-                color: '#388e3c',
-                border: '1.5px solid #388e3c',
-                borderRadius: 2.5,
-                fontWeight: 700,
-                fontSize: 16,
-                textTransform: 'uppercase',
-                px: 2,
-                py: 1.2,
-                boxShadow: 'none',
-                '&:hover': { bgcolor: 'rgba(76,175,80,0.18)' }
-              }}
-              fullWidth
-              onClick={() => handleOtrab(otrabModal.idx, '+0.75')}
-            >
-              ОТРАБОТАЛ (+0.75 БАЛЛА)
-            </Button>
-            <Button
-              variant="outlined"
-              sx={{
-                bgcolor: 'rgba(211,47,47,0.10)',
-                color: '#d32f2f',
-                border: '1.5px solid #d32f2f',
-                borderRadius: 2.5,
-                fontWeight: 700,
-                fontSize: 16,
-                textTransform: 'uppercase',
-                px: 2,
-                py: 1.2,
-                boxShadow: 'none',
-                '&:hover': { bgcolor: 'rgba(211,47,47,0.18)' }
-              }}
-              fullWidth
-              onClick={() => handleOtrab(otrabModal.idx, '-1')}
-            >
-              НЕ ОТРАБОТАЛ (-1 БАЛЛ)
-            </Button>
-          </Stack>
-        </DialogContent>
-      </Dialog>
-    </Paper>
-  );
-}
-
-// --- Статистика посещаемости ---
 function AttendanceStatsCard({ lessons, group }) {
   let allStudents = [];
   lessons.forEach(lesson => {
@@ -399,30 +513,39 @@ export default function TeacherPanel() {
   const [qrOpen, setQROpen] = useState(false);
   const code = useDynamicCode();
 
-  // Получить список групп для выбранного дня
   const lessons = schedule[selectedDay]?.lessons || [];
   const dayGroups = Array.from(new Set(lessons.map(l => l.group)));
   const groupChips = ['Все', ...dayGroups];
 
-  // Фильтруем пары по выбранной группе
   const filteredLessons = selectedGroup === 'Все' ? lessons : lessons.filter(l => l.group === selectedGroup);
 
   return (
     <Box maxWidth={1200} mx="auto" mt={4}>
-      <Grid container spacing={3} alignItems="stretch" sx={{overflowX: 'auto'}}>
-        {/* Первый ряд */}
+      <Grid container spacing={3} alignItems="stretch" sx={{ overflowX: 'auto' }}>
         <Grid item xs={12} md={10} display="flex">
           <Paper elevation={2} sx={{ borderRadius: 12, p: 4, flex: 1, width: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-            
             <Typography variant="h6" fontWeight={600} mb={2}>Журнал посещаемости</Typography>
-            {/* Табы по дням недели */}
             <Stack direction="row" spacing={1} mb={2}>
               {weekDays.map((d, i) => (
-                <Button key={d.key} variant={selectedDay === i ? 'contained' : 'outlined'} sx={{ minWidth: 48, bgcolor: selectedDay === i ? '#757575' : '#fff', color: selectedDay === i ? '#fff' : '#757575', borderColor: '#757575', fontWeight: 600, borderRadius: 12, textTransform: 'none' }} onClick={() => { setSelectedDay(i); setSelectedGroup('Все'); }}>{d.label}</Button>
+                <Button
+                  key={d.key}
+                  variant={selectedDay === i ? 'contained' : 'outlined'}
+                  sx={{
+                    minWidth: 48,
+                    bgcolor: selectedDay === i ? '#757575' : '#fff',
+                    color: selectedDay === i ? '#fff' : '#757575',
+                    borderColor: '#757575',
+                    fontWeight: 600,
+                    borderRadius: 12,
+                    textTransform: 'none'
+                  }}
+                  onClick={() => { setSelectedDay(i); setSelectedGroup('Все'); }}
+                >
+                  {d.label}
+                </Button>
               ))}
             </Stack>
             <Typography fontWeight={600} fontSize={16} mb={2}>{schedule[selectedDay]?.day}</Typography>
-            {/* Чипы групп */}
             <Stack direction="row" spacing={1} mb={2}>
               {groupChips.map(g => (
                 <Chip
@@ -439,10 +562,13 @@ export default function TeacherPanel() {
                 />
               ))}
             </Stack>
-            {/* Список пар */}
             <Stack spacing={2}>
               {filteredLessons.map((lesson, idx) => (
-                <Paper key={lesson.time + lesson.group} elevation={1} sx={{ p: 2, borderRadius: 12, display: 'flex', flexDirection: 'column', bgcolor: '#fafbfc', boxShadow: 'none', border: '1px solid #eaeaea' }}>
+                <Paper
+                  key={lesson.time + lesson.group}
+                  elevation={1}
+                  sx={{ p: 2, borderRadius: 12, display: 'flex', flexDirection: 'column', bgcolor: '#fafbfc', boxShadow: 'none', border: '1px solid #eaeaea' }}
+                >
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Box minWidth={60}>
                       <Typography fontSize={14} color="#757575">{lesson.time}</Typography>
@@ -453,7 +579,12 @@ export default function TeacherPanel() {
                       <Typography fontSize={13} color="#757575" mt={0.5}>Ауд. {lesson.room} / Группа: {lesson.group}</Typography>
                     </Box>
                     <Box>
-                      <Button size="small" variant="outlined" sx={{ borderColor: '#757575', color: '#757575', fontWeight: 500, borderRadius: 12, px: 3, textTransform: 'none', mt: 1 }} onClick={() => setVisitModal({ open: true, lesson })}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderColor: '#757575', color: '#757575', fontWeight: 500, borderRadius: 12, px: 3, textTransform: 'none', mt: 1 }}
+                        onClick={() => setVisitModal({ open: true, lesson })}
+                      >
                         Посмотреть посещение
                       </Button>
                     </Box>
@@ -492,11 +623,7 @@ export default function TeacherPanel() {
             </Button>
           </Paper>
         </Grid>
-        {/* Второй ряд */}
-        <Grid item xs={12} md={6} display="flex">
-          <OtrabotkaCard lessons={lessons} groups={dayGroups} />
-        </Grid>
-        <Grid item xs={12} md={6} display="flex">
+        <Grid item xs={12} display="flex">
           <AttendanceStatsCard lessons={lessons} group={selectedGroup} />
         </Grid>
       </Grid>
@@ -504,4 +631,4 @@ export default function TeacherPanel() {
       <TeacherQRModal open={qrOpen} onClose={() => setQROpen(false)} />
     </Box>
   );
-} 
+}
