@@ -52,3 +52,5 @@ class AttendanceStats(BaseModel):
 
     class Config:
         orm_mode = True
+
+        
