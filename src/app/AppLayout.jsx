@@ -18,10 +18,16 @@ import DeanPanel from '../features/dean/DeanPanel';
 const drawerWidth = 260;
 
 const mockUser = {
+  id: 'starosta123-4567-89ab', // Новый ID для старосты
+  role: 'starosta',
+  isAuthenticated: true,
+};
+
+/*const mockUser = {
   id: '74b3b8de-6709-4cfa-af20-c5b4d91f7dc8', // Синхронизировано с базой
   role: 'student',
   isAuthenticated: true,
-};
+};*/
 
 function SideNav({ onNavigate, user }) {
   const location = useLocation();

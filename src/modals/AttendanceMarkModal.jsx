@@ -38,4 +38,4 @@ export default function AttendanceMarkModal({ open, students, lesson, onToggle, 
       </DialogActions>
     </Dialog>
   );
-} 
+}

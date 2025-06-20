@@ -1,43 +1,86 @@
 import { Box, Paper, Typography, Button, Stack, List, ListItem, ListItemText, Grid, Chip, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, IconButton } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AbsenceReasonModal from '../../modals/AbsenceReasonModal';
-import QRCodeModal from '../../modals/QRCodeModal';
 import AttendanceMarkModal from '../../modals/AttendanceMarkModal';
+import axios from 'axios';
+import { API_BASE_URL } from '../../app/config';
 import { weekDays, schedule, studentsList, personalHistory, groupHistory, personalAbsences, groupAbsences, personalStats, groupStats } from '../../mocks/starostaMocks';
-import React from 'react';
 
-export default function AttendanceMarking() {
+export default function AttendanceMarking({ userId }) {
   const [scheduleData, setScheduleData] = useState(schedule);
   const [selectedDay, setSelectedDay] = useState(0);
   const [modal, setModal] = useState({ open: false, dayIdx: null, lessonIdx: null });
   const [marking, setMarking] = useState([]);
   const [modalLesson, setModalLesson] = useState(null);
-  const [openQR, setOpenQR] = useState(false);
-
-  // Отдельные viewMode для каждой секции
+  const [history, setHistory] = useState([]);
+  const [absences, setAbsences] = useState([]);
+  const [personalStatsData, setPersonalStatsData] = useState(personalStats); // Инициализируем моками
+  const [groupStatsData, setGroupStatsData] = useState(groupStats); // Инициализируем моками
   const [historyView, setHistoryView] = useState('group');
   const [absencesView, setAbsencesView] = useState('group');
   const [statsView, setStatsView] = useState('group');
+  const [loading, setLoading] = useState(true);
+  const attendanceRef = useRef(null);
 
-  const history = historyView === 'personal' ? personalHistory : groupHistory;
-  const absences = absencesView === 'personal' ? personalAbsences : groupAbsences;
-  const stats = statsView === 'personal' ? personalStats : groupStats;
+  const axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Authorization': `Bearer dummy-token`, // Замени на реальный токен
+    },
+  });
 
-  // refs для синхронизации высоты
-  const [attendanceCardHeight, setAttendanceCardHeight] = useState(0);
-  const attendanceRef = React.useRef(null);
-  React.useEffect(() => {
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // История (личная или групповая в зависимости от historyView)
+        const historyResponse = await axiosInstance.get(`/attendances/history?user_id=${historyView === 'personal' ? userId : ''}&limit=10&start_date=2025-06-01&end_date=2025-06-20`);
+        setHistory(historyResponse.data.map(item => ({
+          time: new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date(item.created_at).toLocaleDateString(),
+          subject: item.lessonid || 'Предмет',
+          student: item.user_id || 'Студент',
+          status: item.attendance ? 'П' : 'О',
+        })));
+
+        // Пропуски (личные или групповые в зависимости от absencesView)
+        const absencesResponse = await axiosInstance.get(`/attendances/?user_id=${absencesView === 'personal' ? userId : ''}&limit=10&start_date=2025-06-01&end_date=2025-06-20`);
+        setAbsences(absencesResponse.data
+          .filter(a => !a.attendance)
+          .map(item => ({
+            time: new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date(item.created_at).toLocaleDateString(),
+            subject: item.lessonid || 'Предмет',
+            student: item.user_id || 'Студент',
+            reason: item.reason_id ? 'Причина отмечена' : 'Не указана',
+            accepted: !!item.reason_id,
+          })));
+
+        // Личная статистика
+        const personalStatsResponse = await axiosInstance.get(`/attendances/stats?user_id=${userId}&start_date=2025-06-01&end_date=2025-06-20`);
+        setPersonalStatsData(personalStatsResponse.data);
+
+        // Групповая статистика
+        const groupStatsResponse = await axiosInstance.get(`/attendances/group-stats?start_date=2025-06-01&end_date=2025-06-20`);
+        setGroupStatsData(groupStatsResponse.data);
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [userId, historyView, absencesView]);
+
+  useEffect(() => {
     if (attendanceRef.current) {
       setAttendanceCardHeight(attendanceRef.current.offsetHeight);
     }
   }, [selectedDay, scheduleData]);
 
-  // Открыть модалку для пары
   const handleOpenMark = (dayIdx, lessonIdx) => {
     setMarking(scheduleData[dayIdx].lessons[lessonIdx].group.map(s => ({ ...s })));
     setModalLesson({
@@ -46,30 +89,56 @@ export default function AttendanceMarking() {
     });
     setModal({ open: true, dayIdx, lessonIdx });
   };
-  const handleCloseMark = () => { setModal({ open: false, dayIdx: null, lessonIdx: null }); setModalLesson(null); };
-  // Клик по студенту
-  const handleToggleStudent = idx => {
-    setMarking(marking => marking.map((s, i) =>
+
+  const handleCloseMark = () => {
+    setModal({ open: false, dayIdx: null, lessonIdx: null });
+    setModalLesson(null);
+  };
+
+  const handleToggleStudent = (idx) => {
+    setMarking(marking.map((s, i) =>
       i === idx ? { ...s, status: s.status === 'П' ? 'Н' : 'П' } : s
     ));
   };
-  // Сохранить отметку
-  const handleSaveMark = () => {
-    setScheduleData(scheduleData => scheduleData.map((d, di) =>
-      di === modal.dayIdx ? {
-        ...d,
-        lessons: d.lessons.map((l, li) =>
-          li === modal.lessonIdx ? { ...l, group: marking } : l
-        )
-      } : d
-    ));
-    handleCloseMark();
+
+  const handleSaveMark = async () => {
+    setLoading(true);
+    try {
+      const attendanceData = marking.map(s => ({
+        user_id: s.id,
+        attendance: s.status === 'П',
+        validation_type: 'MANUAL',
+        lessonid: modalLesson.subject,
+      }));
+      for (const data of attendanceData) {
+        await axiosInstance.post('/attendances/', data, {
+          params: { starosta_id: userId }, // Передаём starosta_id для устранения 403
+        });
+      }
+      setScheduleData(scheduleData.map((d, di) =>
+        di === modal.dayIdx ? {
+          ...d,
+          lessons: d.lessons.map((l, li) =>
+            li === modal.lessonIdx ? { ...l, group: marking } : l
+          )
+        } : d
+      ));
+      handleCloseMark();
+    } catch (error) {
+      console.error('Ошибка сохранения:', error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const [attendanceCardHeight, setAttendanceCardHeight] = useState(0);
+
+  if (loading) return <LinearProgress />;
 
   return (
     <Box maxWidth={1200} mx="auto" mt={4}>
       <Grid container spacing={3} alignItems="stretch">
-        {/* Первый ряд: отметка посещаемости и QR-код */}
+        {/* Первый ряд: отметка посещаемости */}
         <Grid item xs={12} md={8} display="flex">
           <Paper ref={attendanceRef} elevation={2} sx={{ borderRadius: 12, p: 3, flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
@@ -110,14 +179,6 @@ export default function AttendanceMarking() {
         </Grid>
         <Grid item xs={12} md={4} display="flex">
           <Paper elevation={2} sx={{ borderRadius: 12, p: 3, flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: attendanceCardHeight, justifyContent: 'center', alignItems: 'center' }}>
-            <Stack direction="column" alignItems="center" spacing={2} mb={2}>
-              <QrCode2Icon sx={{ color: '#111', fontSize: 80 }} />
-              <Typography fontWeight={500} fontSize={20} align="center">Сканировать QR-код</Typography>
-            </Stack>
-            <Button size="medium" variant="contained" sx={{ bgcolor: '#111', color: '#fff', borderRadius: 12, fontWeight: 400, fontSize: 16, minWidth: 120, textTransform: 'none', boxShadow: 2, display: 'block', mx: 'auto' }} onClick={() => setOpenQR(true)}>
-              Сканировать
-            </Button>
-            {/* Статистика внизу */}
             <Box mt={3} width="100%">
               <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                 <Typography variant="h6" fontWeight={600}>Статистика</Typography>
@@ -149,19 +210,19 @@ export default function AttendanceMarking() {
               <Stack direction="row" spacing={3} mb={2}>
                 <Stack>
                   <Typography color="#111" fontSize={15}>Посещено</Typography>
-                  <Typography fontWeight={600} fontSize={18}>{stats.attended}</Typography>
+                  <Typography fontWeight={600} fontSize={18}>{statsView === 'personal' ? personalStatsData.attended : groupStatsData.attended}</Typography>
                 </Stack>
                 <Stack>
                   <Typography color="#111" fontSize={15}>Пропущено</Typography>
-                  <Typography fontWeight={600} fontSize={18}>{stats.missed}</Typography>
+                  <Typography fontWeight={600} fontSize={18}>{statsView === 'personal' ? personalStatsData.missed : groupStatsData.missed}</Typography>
                 </Stack>
                 <Stack>
                   <Typography color="#111" fontSize={15}>Процент</Typography>
-                  <Typography fontWeight={600} fontSize={18}>{stats.percent}%</Typography>
+                  <Typography fontWeight={600} fontSize={18}>{statsView === 'personal' ? personalStatsData.percent : groupStatsData.percent}%</Typography>
                 </Stack>
               </Stack>
               <Box>
-                <LinearProgress variant="determinate" value={stats.percent} sx={{ height: 12, borderRadius: 6, bgcolor: '#eee', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />
+                <LinearProgress variant="determinate" value={statsView === 'personal' ? personalStatsData.percent : groupStatsData.percent} sx={{ height: 12, borderRadius: 6, bgcolor: '#eee', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />
               </Box>
             </Box>
           </Paper>
@@ -198,17 +259,21 @@ export default function AttendanceMarking() {
               </Box>
             </Stack>
             <List dense sx={{ flexGrow: 1 }}>
-              {history.map((h, i) => (
-                <ListItem key={i} disablePadding sx={{ mb: 1, alignItems: 'flex-start' }}>
-                  <ListItemText
-                    primary={<>
-                      <Typography color="#111" fontSize={15}>{h.time}, {h.date}</Typography>
-                      <Typography color="#111" fontSize={15}>{h.subject}</Typography>
-                      <Typography variant="body2" color="text.secondary" fontSize={13}>{h.student}</Typography>
-                    </>}
-                  />
-                </ListItem>
-              ))}
+              {history.length === 0 ? (
+                <Typography color="text.secondary" align="center">Нет данных</Typography>
+              ) : (
+                history.map((h, i) => (
+                  <ListItem key={i} disablePadding sx={{ mb: 1, alignItems: 'flex-start' }}>
+                    <ListItemText
+                      primary={<>
+                        <Typography color="#111" fontSize={15}>{h.time}, {h.date}</Typography>
+                        <Typography color="#111" fontSize={15}>{h.subject}</Typography>
+                        <Typography variant="body2" color="text.secondary" fontSize={13}>{h.student}</Typography>
+                      </>}
+                    />
+                  </ListItem>
+                ))
+              )}
             </List>
           </Paper>
         </Grid>
@@ -243,34 +308,37 @@ export default function AttendanceMarking() {
               </Box>
             </Stack>
             <List dense sx={{ flexGrow: 1 }}>
-              {absences.map((a, i) => (
-                <ListItem key={i} disablePadding sx={{ mb: 1, alignItems: 'flex-start' }}>
-                  <ListItemText
-                    primary={<>
-                      <Typography color="#111" fontSize={15}>{a.time}, {a.date}</Typography>
-                      <Typography color="#111" fontSize={15}>{a.subject}</Typography>
-                      <Typography variant="body2" color="text.secondary" fontSize={13}>{a.student}</Typography>
-                    </>}
-                    secondary={<>
-                      <Typography color="text.secondary" fontSize={13}>{a.reason}</Typography>
-                      {a.accepted && (
-                        <Stack direction="row" spacing={1} mt={0.5}>
-                          <Chip
-                            label="Причина отмечена"
-                            color="success"
-                            sx={{ fontWeight: 500, fontSize: 13, bgcolor: '#e8f5e9', color: '#388e3c' }}
-                          />
-                        </Stack>
-                      )}
-                    </>}
-                  />
-                </ListItem>
-              ))}
+              {absences.length === 0 ? (
+                <Typography color="text.secondary" align="center">Нет пропусков</Typography>
+              ) : (
+                absences.map((a, i) => (
+                  <ListItem key={i} disablePadding sx={{ mb: 1, alignItems: 'flex-start' }}>
+                    <ListItemText
+                      primary={<>
+                        <Typography color="#111" fontSize={15}>{a.time}, {a.date}</Typography>
+                        <Typography color="#111" fontSize={15}>{a.subject}</Typography>
+                        <Typography variant="body2" color="text.secondary" fontSize={13}>{a.student}</Typography>
+                      </>}
+                      secondary={<>
+                        <Typography color="text.secondary" fontSize={13}>{a.reason}</Typography>
+                        {a.accepted && (
+                          <Stack direction="row" spacing={1} mt={0.5}>
+                            <Chip
+                              label="Причина отмечена"
+                              color="success"
+                              sx={{ fontWeight: 500, fontSize: 13, bgcolor: '#e8f5e9', color: '#388e3c' }}
+                            />
+                          </Stack>
+                        )}
+                      </>}
+                    />
+                  </ListItem>
+                ))
+              )}
             </List>
           </Paper>
         </Grid>
       </Grid>
-      {/* Модалка для отметки посещаемости */}
       <AttendanceMarkModal
         open={modal.open}
         students={marking}
@@ -279,7 +347,6 @@ export default function AttendanceMarking() {
         onClose={handleCloseMark}
         onSave={handleSaveMark}
       />
-      <QRCodeModal open={openQR} onClose={() => setOpenQR(false)} />
     </Box>
   );
-} 
+}
