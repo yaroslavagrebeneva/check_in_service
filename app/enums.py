@@ -1,15 +1,15 @@
-import enum
+from enum import Enum
 
-class ValidationTypeEnum(str, enum.Enum):
-    QR = "QR"
+class ValidationTypeEnum(str, Enum):
     MANUAL = "MANUAL"
+    QR = "QR"
 
-class ReasonNameEnum(str, enum.Enum):
+class ReasonNameEnum(str, Enum):
     ILLNESS = "ILLNESS"
     GOOD_REASON = "GOOD_REASON"
     OTHER = "OTHER"
 
-class StatusEnum(str, enum.Enum):
-    CONFIRMED = "CONFIRMED"
+class StatusEnum(str, Enum):
     PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
     REJECTED = "REJECTED"

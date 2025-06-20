@@ -1,34 +1,22 @@
-"""Database connection and session management."""
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from contextlib import asynccontextmanager
-import os
-from dotenv import load_dotenv
-from .models import Base
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine
+from typing import AsyncGenerator
 
-load_dotenv()  # Load environment variables from .env file
+# Конфигурация подключения к базе данных
+DATABASE_URL = "postgresql+asyncpg://postgres:slava2006@localhost:5432/girls_app"
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL не задана в .env")
+# Создание асинхронного движка
+engine = create_async_engine(DATABASE_URL, echo=True)  # echo=True для отладки SQL
 
-engine = create_async_engine(DATABASE_URL, echo=True)  # Create async engine with echo for debugging
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False
+# Создание фабрики сессий
+async_session_factory = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
 )
 
-@asynccontextmanager
-async def get_async_session():
-    """Provide a transactional scope around a series of operations."""
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory() as session:
+        yield session
 
-async def init_db():
-    """Initialize the database by creating all tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# База для декларативных моделей
+Base = declarative_base()
