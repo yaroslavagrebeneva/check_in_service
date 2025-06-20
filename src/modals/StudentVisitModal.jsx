@@ -1,7 +1,10 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, Typography, Chip } from '@mui/material';
 
 export function StudentVisitModal({ open, onClose, visit }) {
-  if (!visit) return null;
+  if (!visit || Object.keys(visit).length === 0) {
+    console.log('No visit data:', visit);
+    return null;
+  }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import {
   AppBar, Toolbar, IconButton, Avatar, Drawer, Box, Typography, Accordion, AccordionSummary, AccordionDetails, List, ListItemButton, ListItemIcon, ListItemText, Divider
@@ -17,8 +17,16 @@ import DeanPanel from '../features/dean/DeanPanel';
 
 const drawerWidth = 260;
 
-function SideNav({ onNavigate }) {
-  const location = useLocation(); // Get current route
+const mockUser = {
+  id: '74b3b8de-6709-4cfa-af20-c5b4d91f7dc8', // Синхронизировано с базой
+  role: 'student',
+  isAuthenticated: true,
+};
+
+function SideNav({ onNavigate, user }) {
+  const location = useLocation();
+
+  const isAuthorized = (requiredRole) => !requiredRole || user.role === requiredRole;
 
   return (
     <Drawer
@@ -54,6 +62,7 @@ function SideNav({ onNavigate }) {
                   },
                 }}
                 onClick={() => onNavigate('/attendance/student')}
+                disabled={!isAuthorized('student')}
               >
                 <ListItemIcon sx={{ color: location.pathname === '/attendance/student' ? '#fff' : '#757575' }}>
                   <PersonIcon />
@@ -70,6 +79,7 @@ function SideNav({ onNavigate }) {
                   },
                 }}
                 onClick={() => onNavigate('/attendance/starosta')}
+                disabled={!isAuthorized('starosta')}
               >
                 <ListItemIcon sx={{ color: location.pathname === '/attendance/starosta' ? '#fff' : '#757575' }}>
                   <GroupIcon />
@@ -86,6 +96,7 @@ function SideNav({ onNavigate }) {
                   },
                 }}
                 onClick={() => onNavigate('/attendance/teacher')}
+                disabled={!isAuthorized('teacher')}
               >
                 <ListItemIcon sx={{ color: location.pathname === '/attendance/teacher' ? '#fff' : '#757575' }}>
                   <SchoolIcon />
@@ -102,6 +113,7 @@ function SideNav({ onNavigate }) {
                   },
                 }}
                 onClick={() => onNavigate('/attendance/dean')}
+                disabled={!isAuthorized('dean')}
               >
                 <ListItemIcon sx={{ color: location.pathname === '/attendance/dean' ? '#fff' : '#757575' }}>
                   <AdminPanelSettingsIcon />
@@ -118,9 +130,18 @@ function SideNav({ onNavigate }) {
 
 export default function AppLayout() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(mockUser);
+
+  useEffect(() => {
+    if (!user.isAuthenticated) {
+      console.log('Пользователь не авторизован, эмуляция базового пользователя');
+      setUser(mockUser);
+    }
+  }, []);
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#fff' }}>
-      <SideNav onNavigate={navigate} />
+      <SideNav onNavigate={navigate} user={user} />
       <Box
         sx={{
           position: 'fixed',
@@ -193,11 +214,11 @@ export default function AppLayout() {
         </AppBar>
         <Box sx={{ p: 4, pt: 7 }}>
           <Routes>
-            <Route path="/attendance/student" element={<StudentPanel />} />
-            <Route path="/attendance/starosta" element={<AttendanceMarking />} />
-            <Route path="/attendance/teacher" element={<TeacherPanel />} />
-            <Route path="/attendance/dean" element={<DeanPanel />} />
-            <Route path="*" element={<StudentPanel />} />
+            <Route path="/attendance/student" element={<StudentPanel userId={user.id} />} />
+            <Route path="/attendance/starosta" element={<AttendanceMarking userId={user.id} />} />
+            <Route path="/attendance/teacher" element={<TeacherPanel userId={user.id} />} />
+            <Route path="/attendance/dean" element={<DeanPanel userId={user.id} />} />
+            <Route path="*" element={<StudentPanel userId={user.id} />} />
           </Routes>
         </Box>
       </Box>
