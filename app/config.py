@@ -20,7 +20,6 @@ class Config(BaseSettings):
 
 config = Config()
 
-# Проверка
 if __name__ == "__main__":
     print(".env успешно загружен!")
     print("DATABASE_URL =", config.db_uri)
