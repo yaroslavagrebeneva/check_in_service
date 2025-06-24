@@ -2,10 +2,14 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
+from dotenv import load_dotenv
+import os
 
 from .database import init_db
 from .endpoints import router
 # from .keycloak_utils import get_token
+
+
 
 app = FastAPI(
     title="Check-In API",
@@ -44,4 +48,5 @@ async def read_root():
 # Main execution block
 if __name__ == "__main__":
     import uvicorn
+    load_dotenv()
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

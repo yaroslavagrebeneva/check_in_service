@@ -1,19 +1,29 @@
-# from keycloak import KeycloakOpenID
-# from fastapi import Depends, HTTPException
-# from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from keycloak import KeycloakOpenID
+from .config import config
 
-# keycloak_openid = KeycloakOpenID(
-#     server_url="http://localhost:8080/auth/",
-#     client_id="your-client-id",
-#     realm_name="your-realm",
-#     client_secret_key="your-client-secret"
-# )
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    authorizationUrl=f"{config.server_url}realms/{config.realm_name}/protocol/openid-connect/auth",
+    tokenUrl=f"{config.server_url}realms/{config.realm_name}/protocol/openid-connect/token",
+)
+keycloak_openid = KeycloakOpenID(
+    server_url=config.server_url,
+    client_id=config.client_id,
+    realm_name=config.realm_name,
+    client_secret_key=config.client_secret_key,
+    verify=True,
+)
 
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# def get_token(token: str = Depends(oauth2_scheme)):
-#     try:
-#         userinfo = keycloak_openid.userinfo(token)
-#         return userinfo
-#     except Exception as e:
-#         raise HTTPException(status_code=401, detail="Invalid token")
+async def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+    try:
+        token_info = await keycloak_openid.a_introspect(token)
+        if not token_info.get("active"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
+        print("Get_current_user success")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
