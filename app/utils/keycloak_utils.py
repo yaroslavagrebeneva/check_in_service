@@ -7,6 +7,7 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl=f"{SERVER_URL}realms/{REALM_NAME}/protocol/openid-connect/auth",
     tokenUrl=f"{SERVER_URL}realms/{REALM_NAME}/protocol/openid-connect/token",
 )
+
 keycloak_openid = KeycloakOpenID(
     server_url=SERVER_URL,
     client_id=CLIENT_ID,
