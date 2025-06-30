@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
-from dotenv import load_dotenv
 
-from .database import init_db
+from .database.database import init_db
 from .endpoints import router
 
 app = FastAPI(
@@ -26,6 +25,7 @@ app.add_middleware(
 
 app.include_router(router)
 
+
 @app.on_event("startup")
 async def on_startup():
     """Initialize the database on application startup."""
@@ -36,6 +36,8 @@ async def on_startup():
 
 # Protected root endpoint
 # @app.get("/", dependencies=[Depends(get_token)])
+
+
 @app.get("/")
 async def read_root():
     """Return a welcome message for the root endpoint (requires authentication)."""
@@ -44,5 +46,4 @@ async def read_root():
 # Main execution block
 if __name__ == "__main__":
     import uvicorn
-    load_dotenv()
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

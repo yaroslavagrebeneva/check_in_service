@@ -6,7 +6,7 @@ authors = ["Your Name <your.email@example.com>"]
 package-mode = false  # Добавлено для отключения упаковки
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.10"
 aiofiles = "^23.2.1"
 alembic = "^1.16.1"
 annotated-types = "^0.7.0"

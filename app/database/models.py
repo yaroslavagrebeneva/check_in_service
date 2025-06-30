@@ -1,9 +1,11 @@
-from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
+# from database.enums import ValidationTypeEnum, ReasonNameEnum, StatusEnum
 from .enums import ValidationTypeEnum, ReasonNameEnum, StatusEnum
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "users"
@@ -14,6 +16,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     attendances = relationship("Attendance", back_populates="user")
+
 
 class Reason(Base):
     __tablename__ = "reasons"
@@ -26,6 +29,7 @@ class Reason(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     attendances = relationship("Attendance", back_populates="reason")
+
 
 class Attendance(Base):
     __tablename__ = "attendances"

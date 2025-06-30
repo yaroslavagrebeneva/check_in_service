@@ -7,11 +7,8 @@ Create Date: 2025-06-16 01:16:35.968505
 """
 from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import reflection
-from app.models import Base, User, Attendance, Reason
+from app.database.models import Base
 
 # revision identifiers, used by Alembic.
 revision: str = '8f2a34dead15'
@@ -20,7 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 from alembic import op
-import sqlalchemy as sa
+
 
 def upgrade() -> None:
     bind = op.get_bind()

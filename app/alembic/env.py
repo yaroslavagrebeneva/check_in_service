@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 # Загружаем .env
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
-from app.models import Base, User, Attendance, Reason
+from app.database.models import Base
 
 config = context.config
 database_url = os.getenv("DATABASE_URL")

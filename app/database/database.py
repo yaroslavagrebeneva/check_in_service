@@ -18,6 +18,7 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False
 )
 
+
 @asynccontextmanager
 async def get_async_session():
     """Provide a transactional scope around a series of operations."""
@@ -26,6 +27,7 @@ async def get_async_session():
             yield session
         finally:
             await session.close()
+
 
 async def init_db():
     """Initialize the database by creating all tables."""

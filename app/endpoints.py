@@ -1,18 +1,22 @@
 """API endpoints for user, reason, and attendance management."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import uuid4
 from datetime import datetime
 import pytz
 
-from .models import User, Reason, Attendance
-from .schemas import (
-    UserCreate, UserRead, UserUpdate,
-    ReasonCreate, ReasonRead, ReasonUpdate,
+from app.database.models import User, Reason, Attendance
+from app.database.database import get_async_session
+from app.database.schemas.UserSchemas import (
+    UserCreate, UserRead, UserUpdate
+)
+from app.database.schemas.ReasonSchemas import (
+    ReasonCreate, ReasonRead, ReasonUpdate
+)
+from app.database.schemas.AttendanceSchemas import (
     AttendanceCreate, AttendanceRead, AttendanceUpdate
 )
-from .database import get_async_session
 
 router = APIRouter()
 
@@ -22,6 +26,7 @@ timezone = pytz.timezone("Europe/Moscow")
 # ----------------------------
 # User Endpoints
 # ----------------------------
+
 
 @router.post("/users/", response_model=UserRead, tags=["Users"], summary="Create a new user")
 async def create_user(user: UserCreate, session: AsyncSession = Depends(get_async_session)):
@@ -45,6 +50,7 @@ async def create_user(user: UserCreate, session: AsyncSession = Depends(get_asyn
         await sess.refresh(db_user)
     return db_user
 
+
 @router.get("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Get user by ID")
 async def read_user(user_id: str, session: AsyncSession = Depends(get_async_session)):
     """Retrieve a user by their unique ID.
@@ -64,6 +70,7 @@ async def read_user(user_id: str, session: AsyncSession = Depends(get_async_sess
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
     return user
+
 
 @router.patch("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Update user by ID")
 async def update_user(user_id: str, user_update: UserUpdate, session: AsyncSession = Depends(get_async_session)):
@@ -90,6 +97,7 @@ async def update_user(user_id: str, user_update: UserUpdate, session: AsyncSessi
         await sess.refresh(user)
     return user
 
+
 @router.get("/users/", response_model=list[UserRead], tags=["Users"], summary="Get all users")
 async def read_users(
     session: AsyncSession = Depends(get_async_session),
@@ -114,6 +122,7 @@ async def read_users(
 # Reason Endpoints
 # ----------------------------
 
+
 @router.post("/reasons/", response_model=ReasonRead, tags=["Reasons"], summary="Create a new reason")
 async def create_reason(reason: ReasonCreate, session: AsyncSession = Depends(get_async_session)):
     """Create a new reason for absence.
@@ -136,6 +145,7 @@ async def create_reason(reason: ReasonCreate, session: AsyncSession = Depends(ge
         await sess.refresh(db_reason)
     return db_reason
 
+
 @router.get("/reasons/{reason_id}", response_model=ReasonRead, tags=["Reasons"], summary="Get reason by ID")
 async def read_reason(reason_id: str, session: AsyncSession = Depends(get_async_session)):
     """Retrieve a reason by its unique ID.
@@ -155,6 +165,7 @@ async def read_reason(reason_id: str, session: AsyncSession = Depends(get_async_
         if not reason:
             raise HTTPException(status_code=404, detail="Reason not found")
     return reason
+
 
 @router.patch("/reasons/{reason_id}", response_model=ReasonRead, tags=["Reasons"], summary="Update reason by ID")
 async def update_reason(reason_id: str, reason_update: ReasonUpdate, session: AsyncSession = Depends(get_async_session)):
@@ -181,6 +192,7 @@ async def update_reason(reason_id: str, reason_update: ReasonUpdate, session: As
         await sess.refresh(reason)
     return reason
 
+
 @router.get("/reasons/", response_model=list[ReasonRead], tags=["Reasons"], summary="Get all reasons")
 async def read_reasons(
     session: AsyncSession = Depends(get_async_session),
@@ -205,6 +217,7 @@ async def read_reasons(
 # Attendance Endpoints
 # ----------------------------
 
+
 @router.post("/attendances/", response_model=AttendanceRead, tags=["Attendance"], summary="Create new attendance record")
 async def create_attendance(attendance: AttendanceCreate, session: AsyncSession = Depends(get_async_session)):
     """Create a new attendance record.
@@ -227,6 +240,7 @@ async def create_attendance(attendance: AttendanceCreate, session: AsyncSession 
         await sess.refresh(db_attendance)
     return db_attendance
 
+
 @router.get("/attendances/{attendance_id}", response_model=AttendanceRead, tags=["Attendance"], summary="Get attendance by ID")
 async def read_attendance(attendance_id: str, session: AsyncSession = Depends(get_async_session)):
     """Retrieve an attendance record by its unique ID.
@@ -246,6 +260,7 @@ async def read_attendance(attendance_id: str, session: AsyncSession = Depends(ge
         if not attendance:
             raise HTTPException(status_code=404, detail="Attendance not found")
     return attendance
+
 
 @router.patch("/attendances/{attendance_id}", response_model=AttendanceRead, tags=["Attendance"], summary="Update attendance by ID")
 async def update_attendance(attendance_id: str, attendance_update: AttendanceUpdate, session: AsyncSession = Depends(get_async_session)):
@@ -271,6 +286,7 @@ async def update_attendance(attendance_id: str, attendance_update: AttendanceUpd
         await sess.commit()
         await sess.refresh(attendance)
     return attendance
+
 
 @router.get("/attendances/", response_model=list[AttendanceRead], tags=["Attendance"], summary="Get all attendance records")
 async def read_attendances(
@@ -315,6 +331,7 @@ async def read_attendances(
         result = await sess.execute(query.offset(offset).limit(limit))
         attendances = result.scalars().all()
     return list(attendances)
+
 
 @router.get("/attendances/history", response_model=list[AttendanceRead], tags=["Attendance"], summary="Get attendance history")
 async def read_attendance_history(
@@ -364,6 +381,7 @@ async def read_attendance_history(
         attendances = result.scalars().all()
     return list(attendances)
 
+
 @router.get("/attendances/statistics", response_model=dict, tags=["Attendance"], summary="Get attendance statistics")
 async def read_attendance_statistics(
     session: AsyncSession = Depends(get_async_session),
@@ -412,6 +430,7 @@ async def read_attendance_statistics(
         attended = sum(1 for a in attendances if a.attendance)
         missed = total - attended
     return {"total": total, "attended": attended, "missed": missed}
+
 
 @router.post("/attendances/check", response_model=AttendanceRead, tags=["Attendance"], summary="Check attendance via QR code")
 async def check_attendance(qr_code: dict, session: AsyncSession = Depends(get_async_session)):
