@@ -8,5 +8,4 @@
   <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzEwZGFnd3l0d3NvbXJwamRoOGJtZGRvNHk5NmpwZzdnbjYwMHc5cSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cIDPGayWxXszVEiyDn/giphy.gif" width="600"/>
 </div>
 
-# Документация
-https://docs.google.com/document/d/1NyGHzOXtkI6w9LLmjtE8oT9htwMYOZjamQSz8WHYi5k/edit?usp=sharing
+
