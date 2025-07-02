@@ -9,9 +9,7 @@ services:
       - db
   db:
     image: postgres:13
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 099Rast-Nertes
-      POSTGRES_DB: check_in
+    env_file:
+      - .env.docker
     ports:
       - "5432:5432"
