@@ -25,6 +25,9 @@ venv/
 env/
 ENV/
 .env
+.env.docker
+Dockerfile
+docker-compose.yml
 
 # IDE
 .idea/

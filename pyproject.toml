@@ -3,7 +3,7 @@ name = "check_in"
 version = "0.1.0"
 description = "Attendance check-in system"
 authors = ["Your Name <your.email@example.com>"]
-package-mode = false  # Добавлено для отключения упаковки
+package-mode = false  # Отключение упаковки (оставляем здесь)
 
 [tool.poetry.dependencies]
 python = "^3.10"
