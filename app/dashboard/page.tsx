@@ -7,6 +7,11 @@ import { AlarmClock, Calendar, CalendarCheck, Clock, Eye } from 'lucide-react';
 import { CalendarX } from 'lucide-react';
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
+import { addDays, format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 const stats = [
   { label: 72, value: 'Всего пар' , icon: <Calendar className="text-violet-600" size={20} /> },
@@ -37,6 +42,9 @@ const chartData = [
 ];
 
 export default function DashboardPage() {
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
+  const [popoverOpen, setPopoverOpen] = React.useState(false);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -45,7 +53,28 @@ export default function DashboardPage() {
           <div className="text-muted-foreground text-sm mt-1">Иванов Иван Иванович<br/>И - 1 - 23 / Факультет экономики, менеджмента и информационных технологий / Кафедра прикладной информатики</div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="border rounded-lg px-3 py-1 text-sm bg-white/80 text-black">Янв 20, 2023 - Фев 09, 2023</div>
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="border rounded-lg px-3 py-1 text-sm bg-white/80 text-black flex items-center gap-2 hover:bg-violet-50 transition-colors cursor-pointer"
+                onClick={() => setPopoverOpen(true)}
+              >
+                <CalendarIcon className="text-violet-600" size={18} />
+                {dateRange?.from && dateRange?.to
+                  ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${format(dateRange.to, 'dd.MM.yyyy')}`
+                  : 'Янв 20, 2023 - Фев 09, 2023'}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarPicker
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
           <Button className="bg-violet-600 hover:bg-violet-700 text-white transition-colors">Просмотреть</Button>
         </div>
       </div>
@@ -107,18 +136,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                <Button variant="secondary" className="mt-2 w-full transition-colors">Подробнее</Button>
+                <Button variant="secondary" className="mt-2 w-full transition-colors">                      <a href="/dashboard/missed">Подробнее</a>
+                </Button>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
         <TabsContent value="missed">
           <div className="text-center text-muted-foreground py-20">Список пропусков (заглушка)</div>
-            </TabsContent>
+        </TabsContent>
         <TabsContent value="qr">
           <div className="text-center text-muted-foreground py-20">Отметка qr-кода (заглушка)</div>
-            </TabsContent>
-          </Tabs>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
