@@ -19,6 +19,7 @@ from app.database.schemas.ReasonSchemas import (
 from app.database.schemas.AttendanceSchemas import (
     AttendanceCreate, AttendanceRead, AttendanceUpdate
 )
+from app.utils.keycloak_utils import get_current_user
 
 router = APIRouter()
 
@@ -54,17 +55,20 @@ async def create_user(user: UserCreate, session: AsyncSession = Depends(get_asyn
 
 
 @router.get("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Get user by ID")
-async def read_user(user_id: str, session: AsyncSession = Depends(get_async_session)):
+async def read_user(user_id: str, session: AsyncSession = Depends(get_async_session), current_user: dict = Depends(get_current_user)):
     """Retrieve a user by their unique ID.
     
     Args:
         user_id (str): The ID of the user to retrieve.
+        session (AsyncSession): Database session.
+        current_user (dict): Authenticated user data from Keycloak.
     
     Returns:
         UserRead: User details.
     
     Raises:
         HTTPException: 404 if user not found.
+        HTTPException: 401 if token is invalid.
     """
     async with session as sess:
         result = await sess.execute(select(User).where(User.id == user_id))
@@ -72,7 +76,6 @@ async def read_user(user_id: str, session: AsyncSession = Depends(get_async_sess
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
     return user
-
 
 @router.patch("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Update user by ID")
 async def update_user(user_id: str, user_update: UserUpdate, session: AsyncSession = Depends(get_async_session)):

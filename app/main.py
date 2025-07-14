@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
 from .database.database import init_db
-from .endpoints import router
+from .crud.endpoints import router
 
 app = FastAPI(
     title="Check-In API",
@@ -41,9 +41,13 @@ async def on_startup():
 @app.get("/")
 async def read_root():
     """Return a welcome message for the root endpoint (requires authentication)."""
-    return {"message": "Hello World (Protected)"}
+    return {"message": "Hello World!!!"}
 
 # Main execution block
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
+
+
+###hello
