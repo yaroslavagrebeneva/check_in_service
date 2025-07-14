@@ -1,5 +1,7 @@
 """API endpoints for user, reason, and attendance management."""
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import uuid4
@@ -462,3 +464,66 @@ async def check_attendance(qr_code: dict, session: AsyncSession = Depends(get_as
         await sess.commit()
         await sess.refresh(new_attendance)
     return new_attendance
+
+#
+# @router.get("/attendances/group/{group_id}", response_model=list[AttendanceRead], tags=["Attendance"], summary="Get group attendance with filtering")
+# async def get_group_attendance(
+#     group_id: str,
+#     session: AsyncSession = Depends(get_async_session),
+#     start_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD"),
+#     end_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD"),
+# ):
+#     """Retrieve attendance records for a specific group, optionally filtered by date range."""
+#     query = select(Attendance).join(User).where(User.group_id == group_id)
+#
+#     if start_date:
+#         try:
+#             start = timezone.localize(datetime.strptime(start_date, "%Y-%m-%d")).replace(tzinfo=None)
+#             query = query.where(Attendance.created_at >= start)
+#         except ValueError:
+#             raise HTTPException(status_code=400, detail="Invalid start date format")
+#     if end_date:
+#         try:
+#             end = timezone.localize(datetime.strptime(end_date, "%Y-%m-%d")).replace(tzinfo=None)
+#             query = query.where(Attendance.created_at <= end)
+#         except ValueError:
+#             raise HTTPException(status_code=400, detail="Invalid end date format")
+#
+#     async with session as sess:
+#         result = await sess.execute(query)
+#         records = result.scalars().all()
+#     return records
+#
+# # ----------------------------
+# # New: Calendar Data Endpoint
+# # ----------------------------
+#
+#
+# @router.get("/calendar/group/{group_id}", tags=["Calendar"], summary="Get calendar summary for group")
+# async def get_calendar_data(
+#     group_id: str,
+#     session: AsyncSession = Depends(get_async_session),
+#     month: Optional[int] = Query(None, ge=1, le=12),
+#     year: Optional[int] = Query(None, ge=2000)
+# ):
+#     """Return summary of absences per day for calendar display (count per day)."""
+#     query = select(Attendance.created_at).join(User).where(User.group_id == group_id)
+#
+#     if month and year:
+#         start = datetime(year, month, 1)
+#         if month == 12:
+#             end = datetime(year + 1, 1, 1)
+#         else:
+#             end = datetime(year, month + 1, 1)
+#         query = query.where(Attendance.created_at.between(start, end))
+#
+#     async with session as sess:
+#         result = await sess.execute(query)
+#         records = result.scalars().all()
+#
+#     calendar_data = {}
+#     for date in records:
+#         day = date.date().isoformat()
+#         calendar_data[day] = calendar_data.get(day, 0) + 1
+#
+#     return calendar_data
