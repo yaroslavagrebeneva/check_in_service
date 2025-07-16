@@ -6,7 +6,7 @@ import { signIn } from 'next-auth/react';
 const LoginPage = () => {
   const handleLogin = async () => {
     await signIn('keycloak', {
-      callbackUrl: 'http://localhost:3000/dashboard',
+      callbackUrl: '/dashboard/student',
     });
   };
 

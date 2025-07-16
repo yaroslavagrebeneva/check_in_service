@@ -94,4 +94,4 @@ export const MissedReasonPanel: React.FC<MissedReasonPanelProps> = ({
       </Card>
     </div>
   );
-};
+}; 
