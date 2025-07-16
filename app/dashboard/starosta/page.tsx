@@ -242,7 +242,7 @@ const [selectedDay, setSelectedDay] = React.useState(2);
                   </div>
                 ))}
                 <Button variant="secondary" className="mt-2 w-full transition-colors">
-                  <a href="/dashboard/student/missed">Подробнее</a>
+                  <a href="/dashboard/starosta/missed">Подробнее</a>
                 </Button>
               </CardContent>
             </Card>
