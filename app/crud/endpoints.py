@@ -4,12 +4,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from uuid import uuid4
+from uuid import uuid4, UUID
 from datetime import datetime
 import pytz
 
-from app.database.models import User, Reason, Attendance
+from app.database.models import Reason, Attendance
 from app.database.database import get_async_session
+from app.database.repository.reasonRepo import ReasonRepository
 from app.database.schemas.UserSchemas import (
     UserCreate, UserRead, UserUpdate
 )
@@ -31,76 +32,34 @@ timezone = pytz.timezone("Europe/Moscow")
 # ----------------------------
 
 
-@router.post("/users/", response_model=UserRead, tags=["Users"], summary="Create a new user")
-async def create_user(user: UserCreate, session: AsyncSession = Depends(get_async_session)):
-    """Create a new user.
-    
-    Args:
-        user (UserCreate): User data including ID, teacher status, and Keycloak ID.
-    
-    Returns:
-        UserRead: Created user details.
-    
-    Raises:
-        HTTPException: 400 if user ID is missing.
-    """
-    if not user.id:
-        raise HTTPException(status_code=400, detail="User ID is required")
-    async with session as sess:
-        db_user = User(**user.model_dump())
-        sess.add(db_user)
-        await sess.commit()
-        await sess.refresh(db_user)
-    return db_user
-
-
 @router.get("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Get user by ID")
 async def read_user(user_id: str, session: AsyncSession = Depends(get_async_session), current_user: dict = Depends(get_current_user)):
-    """Retrieve a user by their unique ID.
-    
-    Args:
-        user_id (str): The ID of the user to retrieve.
-        session (AsyncSession): Database session.
-        current_user (dict): Authenticated user data from Keycloak.
-    
-    Returns:
-        UserRead: User details.
-    
-    Raises:
-        HTTPException: 404 if user not found.
-        HTTPException: 401 if token is invalid.
     """
-    async with session as sess:
-        result = await sess.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-    return user
+    Здесь выводятся данные об юзере. Работа с кейклок (как реализовать - пока непонятно).
+    Args:
+        user_id:
+        session:
+        current_user:
+
+    Returns:
+
+    """
+    return None
+
 
 @router.patch("/users/{user_id}", response_model=UserRead, tags=["Users"], summary="Update user by ID")
 async def update_user(user_id: str, user_update: UserUpdate, session: AsyncSession = Depends(get_async_session)):
-    """Update an existing user by their ID.
-    
-    Args:
-        user_id (str): The ID of the user to update.
-        user_update (UserUpdate): Updated user data.
-    
-    Returns:
-        UserRead: Updated user details.
-    
-    Raises:
-        HTTPException: 404 if user not found.
     """
-    async with session as sess:
-        result = await sess.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        for key, value in user_update.model_dump(exclude_unset=True).items():
-            setattr(user, key, value)
-        await sess.commit()
-        await sess.refresh(user)
-    return user
+    Здесь обновление данных юзера, но как сделать с кейклок - пока неясно
+    Args:
+        user_id:
+        user_update:
+        session:
+
+    Returns:
+
+    """
+    return None
 
 
 @router.get("/users/", response_model=list[UserRead], tags=["Users"], summary="Get all users")
@@ -109,19 +68,17 @@ async def read_users(
     limit: int = 10,
     offset: int = 0
 ):
-    """Retrieve all users with pagination.
-    
-    Args:
-        limit (int): Maximum number of records to return.
-        offset (int): Number of records to skip.
-    
-    Returns:
-        list[UserRead]: List of user details.
     """
-    async with session as sess:
-        result = await sess.execute(select(User).offset(offset).limit(limit))
-        users = result.scalars().all()
-    return list(users)
+    Как я понял - для препода.
+    Args:
+        session:
+        limit:
+        offset:
+
+    Returns:
+
+    """
+    return None
 
 # ----------------------------
 # Reason Endpoints
@@ -129,7 +86,10 @@ async def read_users(
 
 
 @router.post("/reasons/", response_model=ReasonRead, tags=["Reasons"], summary="Create a new reason")
-async def create_reason(reason: ReasonCreate, session: AsyncSession = Depends(get_async_session)):
+async def create_reason(
+        reason: ReasonCreate,
+        session: AsyncSession = Depends(get_async_session)
+):
     """Create a new reason for absence.
     
     Args:
@@ -141,18 +101,28 @@ async def create_reason(reason: ReasonCreate, session: AsyncSession = Depends(ge
     Raises:
         HTTPException: 400 if reason name is missing.
     """
-    if not reason.reason_name:
-        raise HTTPException(status_code=400, detail="Reason name is required")
-    async with session as sess:
-        db_reason = Reason(**reason.model_dump())
-        sess.add(db_reason)
-        await sess.commit()
-        await sess.refresh(db_reason)
-    return db_reason
+    try:
+        new_reason = await ReasonRepository.create(
+            session=session,
+            reason_name=reason.reason_name,
+            status=reason.status,
+            doc_url=reason.doc_url,
+            comment=reason.comment
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not create reason: {e}"
+        )
+
+    return new_reason
 
 
 @router.get("/reasons/{reason_id}", response_model=ReasonRead, tags=["Reasons"], summary="Get reason by ID")
-async def read_reason(reason_id: str, session: AsyncSession = Depends(get_async_session)):
+async def read_reason(
+        reason_id: UUID,
+        session: AsyncSession = Depends(get_async_session)
+):
     """Retrieve a reason by its unique ID.
     
     Args:
@@ -164,11 +134,9 @@ async def read_reason(reason_id: str, session: AsyncSession = Depends(get_async_
     Raises:
         HTTPException: 404 if reason not found.
     """
-    async with session as sess:
-        result = await sess.execute(select(Reason).where(Reason.id == reason_id))
-        reason = result.scalar_one_or_none()
-        if not reason:
-            raise HTTPException(status_code=404, detail="Reason not found")
+    reason = await ReasonRepository.get_by_id(session, reason_id)
+    if not reason:
+        raise HTTPException(status_code=404, detail="Reason not found")
     return reason
 
 
@@ -213,10 +181,8 @@ async def read_reasons(
     Returns:
         list[ReasonRead]: List of reason details.
     """
-    async with session as sess:
-        result = await sess.execute(select(Reason).offset(offset).limit(limit))
-        reasons = result.scalars().all()
-    return list(reasons)
+    reasons = await ReasonRepository.get_all(session, limit=limit, offset=offset)
+    return reasons
 
 # ----------------------------
 # Attendance Endpoints

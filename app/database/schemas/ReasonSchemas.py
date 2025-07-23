@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 from pydantic import BaseModel, field_validator
 from app.database.enums import ReasonNameEnum, StatusEnum
 
@@ -8,18 +9,15 @@ from app.database.enums import ReasonNameEnum, StatusEnum
 # Reason Schemas
 # ----------------------------
 
-
 class ReasonBase(BaseModel):
-    id: str
     doc_url: Optional[str] = None
     comment: Optional[str] = None
-    reason_name: ReasonNameEnum
-    status: StatusEnum
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
 
 class ReasonCreate(ReasonBase):
+    reason_name: ReasonNameEnum
+    status: StatusEnum
+
     @field_validator('reason_name')
     def reason_name_required(cls, v):
         if not v:
@@ -28,14 +26,18 @@ class ReasonCreate(ReasonBase):
 
 
 class ReasonRead(ReasonBase):
+    id: UUID  # можно и str, если так в БД
+    reason_name: ReasonNameEnum
+    status: StatusEnum
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
 
 
 class ReasonUpdate(BaseModel):
-    doc_url: Optional[str] = None
-    comment: Optional[str] = None
     reason_name: Optional[ReasonNameEnum] = None
     status: Optional[StatusEnum] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    doc_url: Optional[str] = None
+    comment: Optional[str] = None

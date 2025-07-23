@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
-from .database.database import init_db
-from .crud.endpoints import router
+from app.database.database import init_db
+from app.crud.endpoints import router
 
 app = FastAPI(
     title="Check-In API",
@@ -34,9 +34,6 @@ async def on_startup():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")
 
-# Protected root endpoint
-# @app.get("/", dependencies=[Depends(get_token)])
-
 
 @app.get("/")
 async def read_root():
@@ -46,8 +43,4 @@ async def read_root():
 # Main execution block
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
-
-
-
-###hello
+    uvicorn.run("app.main:app",  port=8000, reload=True)
