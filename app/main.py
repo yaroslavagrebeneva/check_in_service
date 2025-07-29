@@ -3,28 +3,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
 from app.database.database import init_db
-from app.crud.endpoints import router
+from app.routes.AttendanceRoutes import router
 
 app = FastAPI(
     title="Check-In API",
     description="API for managing user attendance, reasons, and related data.",
     version="1.0.0"
 )
-# Настройка CORS
+
 origins = [
-    "http://localhost:5173",  # Фронтенд (Vite по умолчанию)
+    "http://localhost:5173",  
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Разрешенные источники
+    allow_origins=origins,  
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы (GET, POST, OPTIONS и т.д.)
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
 app.include_router(router)
-
 
 @app.on_event("startup")
 async def on_startup():
@@ -34,13 +33,11 @@ async def on_startup():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")
 
-
 @app.get("/")
 async def read_root():
     """Return a welcome message for the root endpoint (requires authentication)."""
     return {"message": "Hello World!!!"}
 
-# Main execution block
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app",  port=8000, reload=True)

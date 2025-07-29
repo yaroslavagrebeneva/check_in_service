@@ -31,7 +31,7 @@ class Reason(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    attendances = relationship("Attendance", back_populates="reason")
+    attendances = relationship("Attendance", back_populates="reason", uselist=False)
 
 
 class Attendance(Base):
@@ -59,7 +59,8 @@ class Attendance(Base):
     reason_id = Column(
         UUID(as_uuid=True),
         ForeignKey("reasons.id", ondelete="CASCADE"),
-        nullable=False
+        nullable=False,
+        unique=True
     )
 
     reason = relationship("Reason", back_populates="attendances")

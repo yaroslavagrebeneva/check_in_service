@@ -1,8 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from keycloak import KeycloakOpenID
-from app.settings.config import *
-import asyncio
+from app.settings.config import SERVER_URL, REALM_NAME, CLIENT_ID, CLIENT_SECRET_KEY
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl=f"{SERVER_URL}realms/{REALM_NAME}/protocol/openid-connect/auth",
@@ -17,6 +16,53 @@ keycloak_openid = KeycloakOpenID(
     verify=True,
 )
 
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        token_info = await keycloak_openid.a_introspect(token)
+        if not token_info.get("active"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
+        return token_info
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+def require_role(*allowed_roles: str):
+    def role_checker(current_user = Depends(get_current_user)):
+        roles = current_user.get("realm_access", {}).get("roles", [])
+        if not any(role in allowed_roles for role in roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав доступа"
+            )
+        return current_user
+    return role_checker
+
+
+
+
+
+
+
+
+# from fastapi import Depends, HTTPException, status
+# from fastapi.security import OAuth2AuthorizationCodeBearer
+# from keycloak import KeycloakOpenID
+# from app.settings.config import *
+# import asyncio
+
+# oauth2_scheme = OAuth2AuthorizationCodeBearer(
+#     authorizationUrl=f"{SERVER_URL}realms/{REALM_NAME}/protocol/openid-connect/auth",
+#     tokenUrl=f"{SERVER_URL}realms/{REALM_NAME}/protocol/openid-connect/token",
+# )
+
+# keycloak_openid = KeycloakOpenID(
+#     server_url=SERVER_URL,
+#     client_id=CLIENT_ID,
+#     realm_name=REALM_NAME,
+#     client_secret_key=CLIENT_SECRET_KEY,
+#     verify=True,
+# )
 
 # async def get_current_user(
 #     token: str = Depends(oauth2_scheme)
@@ -31,23 +77,31 @@ keycloak_openid = KeycloakOpenID(
 #     except Exception as e:
 #         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     
+# def require_role(*allowed_roles: str):
+#     def role_checker(current_user = Depends(get_current_user)):
+#         if current_user.role not in allowed_roles:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Недостаточно прав доступа"
+#             )
+#         return current_user
+#     return role_checker
+# async def get_current_user(token: str = Depends(oauth2_scheme)):
+#     loop = asyncio.get_event_loop()
+#     try:
+#         token_info = await loop.run_in_executor(None, keycloak_openid.introspect, token)
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    loop = asyncio.get_event_loop()
-    try:
-        token_info = await loop.run_in_executor(None, keycloak_openid.introspect, token)
+#         if not token_info.get("active"):
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Invalid token"
+#             )
 
-        if not token_info.get("active"):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
+#         print("Get_current_user success")
+#         return token_info
 
-        print("Get_current_user success")
-        return token_info  # ← возможно, тебе нужно возвращать его
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=str(e)
+#         )

@@ -26,7 +26,7 @@ class ReasonCreate(ReasonBase):
 
 
 class ReasonRead(ReasonBase):
-    id: UUID  # можно и str, если так в БД
+    id: UUID 
     reason_name: ReasonNameEnum
     status: StatusEnum
     created_at: Optional[datetime] = None
@@ -41,3 +41,10 @@ class ReasonUpdate(BaseModel):
     status: Optional[StatusEnum] = None
     doc_url: Optional[str] = None
     comment: Optional[str] = None
+
+class ReasonOut(BaseModel):
+    id: UUID
+    status: str
+
+    class Config:
+        orm_mode = True
