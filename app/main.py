@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
 from app.database.database import init_db
-from app.routes.AttendanceRoutes import router
+from app.routes.routes import router
 
 app = FastAPI(
     title="Check-In API",
@@ -40,4 +40,4 @@ async def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app",  port=8000, reload=True)
+    uvicorn.run("app.main:app",  port=8001, reload=True)

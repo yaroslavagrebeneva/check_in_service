@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, date
 from uuid import UUID
 
-from app.services.AttendanceService import AttendanceService
+from app.services.get_service import GetService
 from app.utils.keycloak_utils import get_current_user, require_role
 from app.database.database import get_async_session
 
@@ -17,7 +17,7 @@ async def get_attendance_stats(
     session: AsyncSession = Depends(get_async_session),
     current_user=Depends(require_role("student", "headman")) # ! какие роли на кейклоке)
     ):
-    stats = await AttendanceService.get_student_stats(
+    stats = await GetService.get_student_stats(
         session=session,
         user_id=current_user["sub"],
         start_date=start_date,
@@ -39,7 +39,7 @@ async def get_missed_attendance(
     и короткого расписания группы через внешний API.
     """
     try:
-        result = await AttendanceService.get_missed_attendance_limit(
+        result = await GetService.get_missed_attendance_limit(
             session=session,
             user_id=current_user.id,
             start_date=start_date,
@@ -50,4 +50,4 @@ async def get_missed_attendance(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
-    # Получение списка пропущенных занятий студента (эндп. 4.2)
+# Получение списка пропущенных занятий студента (эндп. 4.2)
