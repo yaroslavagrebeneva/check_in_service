@@ -42,6 +42,7 @@ class ReasonUpdate(BaseModel):
     doc_url: Optional[str] = None
     comment: Optional[str] = None
 
+
 class ReasonOut(BaseModel):
     id: UUID
     status: str

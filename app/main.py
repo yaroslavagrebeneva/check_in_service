@@ -25,6 +25,7 @@ app.add_middleware(
 
 app.include_router(router)
 
+
 @app.on_event("startup")
 async def on_startup():
     """Initialize the database on application startup."""
@@ -32,6 +33,7 @@ async def on_startup():
         await init_db()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")
+
 
 @app.get("/")
 async def read_root():
