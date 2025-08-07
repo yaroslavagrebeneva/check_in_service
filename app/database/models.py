@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import DateTime
@@ -8,6 +10,7 @@ import uuid
 from .enums import ValidationTypeEnum, ReasonNameEnum, StatusEnum
 
 Base = declarative_base()
+
 
 class Reason(Base):
     __tablename__ = "reasons"
@@ -30,10 +33,19 @@ class Reason(Base):
         nullable=False,
         default=StatusEnum.PENDING
     )
-    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
-
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
     attendances = relationship("Attendance", back_populates="reason", uselist=False)
+
 
 class Attendance(Base):
     __tablename__ = "attendances"
@@ -62,4 +74,3 @@ class Attendance(Base):
     )
 
     reason = relationship("Reason", back_populates="attendances")
-

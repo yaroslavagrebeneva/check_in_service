@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Reason
 
+
 class UpdateReasonRepo:
     @staticmethod
     async def update_reason(

@@ -79,27 +79,3 @@ class GetReasonRepo:
         )
         result = await session.execute(query)
         return result.scalars().all()
-
-    @staticmethod
-    # ? Зачем этот репозиторий
-    async def get_reason_by_id(
-        session: AsyncSession,
-        reason_id: UUID
-    ) -> Optional[Reason]:
-        """
-        Получить запись Reason по её UUID.
-
-        Args:
-            session (AsyncSession): Асинхронная сессия SQLAlchemy.
-            reason_id (UUID): Уникальный идентификатор записи Reason.
-
-        Returns:
-            Optional[Reason]: Первый найденный объект Reason или None, если не найден.
-
-        Usage:
-            reason = await GetReasonRepo.get_reason_by_id(session, some_uuid)
-        """
-        stmt = select(Reason).where(Reason.id == reason_id)
-        result = await session.execute(stmt)
-        return result.scalars().first()
-    
