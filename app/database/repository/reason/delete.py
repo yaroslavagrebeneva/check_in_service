@@ -7,6 +7,7 @@ from app.database.models import Reason
 
 
 class DeleteReasonRepo:
+    # ! На фронте отсутствует возможность удаления причины в принципе
     @staticmethod
     async def delete_reason(
         session: AsyncSession,

@@ -1,12 +1,13 @@
 from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
-from .enums import ValidationTypeEnum, ReasonNameEnum, StatusEnum
+from sqlalchemy import DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
-Base = declarative_base()
+from .enums import ValidationTypeEnum, ReasonNameEnum, StatusEnum
 
+Base = declarative_base()
 
 class Reason(Base):
     __tablename__ = "reasons"
@@ -26,13 +27,13 @@ class Reason(Base):
     )
     status = Column(
         Enum(StatusEnum, name="status_enum"),
-        nullable=False
+        nullable=False,
+        default=StatusEnum.PENDING
     )
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
 
     attendances = relationship("Attendance", back_populates="reason", uselist=False)
-
 
 class Attendance(Base):
     __tablename__ = "attendances"
@@ -50,11 +51,8 @@ class Attendance(Base):
         nullable=False
     )
     lessonid = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow,
-        onupdate=datetime.utcnow
-    )
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=True)
     reason_id = Column(
         UUID(as_uuid=True),
@@ -64,3 +62,4 @@ class Attendance(Base):
     )
 
     reason = relationship("Reason", back_populates="attendances")
+

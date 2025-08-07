@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
 from app.database.database import init_db
-from app.routes.routes import router
+# from app.routes.routes import router
+from app.tests.test_reason_repo_router import router
 
 app = FastAPI(
     title="Check-In API",
@@ -24,7 +25,6 @@ app.add_middleware(
 )
 
 app.include_router(router)
-
 
 @app.on_event("startup")
 async def on_startup():

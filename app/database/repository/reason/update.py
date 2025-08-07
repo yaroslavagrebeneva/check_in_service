@@ -2,8 +2,8 @@ from typing import Any
 from uuid import UUID
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Reason
 
+from app.database.models import Reason
 
 class UpdateReasonRepo:
     @staticmethod

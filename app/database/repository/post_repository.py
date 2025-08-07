@@ -10,7 +10,7 @@ from uuid import UUID
 
 from app.database.models import Reason, Attendance
 from app.database.enums import ReasonNameEnum, StatusEnum, ValidationTypeEnum
-from app.database.schemas.ReasonSchemas import ReasonCreate
+from app.database.schemas.reason_schemas import ReasonCreate
 
 
 class PostRepository:

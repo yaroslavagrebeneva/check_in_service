@@ -81,6 +81,7 @@ class GetReasonRepo:
         return result.scalars().all()
 
     @staticmethod
+    # ? Зачем этот репозиторий
     async def get_reason_by_id(
         session: AsyncSession,
         reason_id: UUID
@@ -101,3 +102,4 @@ class GetReasonRepo:
         stmt = select(Reason).where(Reason.id == reason_id)
         result = await session.execute(stmt)
         return result.scalars().first()
+    
