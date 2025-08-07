@@ -37,6 +37,7 @@ typing_extensions = "^4.14.0"
 uvicorn = "^0.34.3"
 pytz = "^2025.2"
 pydantic-settings = "^2.10.0"
+tzdata = "^2025.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^21.12b0"
