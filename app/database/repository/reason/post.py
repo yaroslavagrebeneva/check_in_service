@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Reason
 
+
 class PostReasonRepo:
     @staticmethod
     async def create_reason(
