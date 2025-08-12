@@ -36,6 +36,7 @@ class GetAttendanceRepo:
         return result.scalars().all()
 
     @staticmethod
+    # ! Написать
     async def get_critical_attendance(
         session: AsyncSession,
         attendance_threshold_percent: float = 50.0
@@ -48,6 +49,7 @@ class GetAttendanceRepo:
         return []
 
     @staticmethod
+    # ! Обсудить
     async def get_report_preview(
         session: AsyncSession,
         month: int,
@@ -72,7 +74,8 @@ class GetAttendanceRepo:
             "all_missed_classes_with_good_reason": all_missed_good_reason,
             "student_names": []  # сюда можно добавить логику по именам студентов
         }
-
+    
+    # ! Это на страницу отметки, как я поняла
     @staticmethod
     async def get_latest_attendance(
         session: AsyncSession,
@@ -81,7 +84,8 @@ class GetAttendanceRepo:
         query = select(Attendance).where(Attendance.user_id == user_id).order_by(Attendance.created_at.desc()).limit(1)
         result = await session.execute(query)
         return result.scalar_one_or_none()
-
+    
+    # ! Вот это для статистики 
     @staticmethod
     async def get_attendance_stats(
         session: AsyncSession,

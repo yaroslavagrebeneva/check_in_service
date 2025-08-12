@@ -11,10 +11,8 @@ from app.database.enums import ReasonNameEnum, StatusEnum, ValidationTypeEnum
 
 
 class PostAttendanceRepo:
-    @staticmethod
-    async def delete(session: AsyncSession, reason_id: uuid.UUID) -> None:
-        await session.execute(delete(Reason).where(Reason.id == reason_id))
-        await session.commit()
+    # ! Сюда или нет?
+    # ? Сгенерировать QR-код для пары
 
     # Регистрация присутствия студента старостой.
     @staticmethod
